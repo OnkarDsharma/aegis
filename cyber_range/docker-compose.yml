@@ -1,0 +1,28 @@
+services:
+  webapp:
+    image: docker.io/bkimminich/juice-shop:v14.0.0
+    container_name: webapp
+    ports:
+      - "8080:3000"
+    networks:
+      - range_net
+
+  database:
+    image: docker.io/library/mysql:5.7.31
+    container_name: database
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass123
+      MYSQL_DATABASE: appdb
+    networks:
+      - range_net
+
+  employee:
+    image: docker.io/library/ubuntu:22.04
+    container_name: employee
+    command: sleep infinity
+    networks:
+      - range_net
+
+networks:
+  range_net:
+    driver: bridge

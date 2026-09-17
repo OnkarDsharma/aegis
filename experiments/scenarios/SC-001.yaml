@@ -1,0 +1,43 @@
+scenario_id: SC-001
+name: "SQLi Login Bypass - Juice Shop"
+
+environment:
+  topology: single-app-range
+  target_image: docker.io/bkimminich/juice-shop:v14.0.0
+
+assets:
+  - employee
+  - webapp
+  - database
+
+initial_access:
+  asset: employee
+  method: network_reachable (internal range_net)
+
+objective:
+  target: webapp
+  goal: authenticate_as_admin_without_credentials
+
+vulnerability:
+  class: SQL Injection
+  cwe: CWE-89
+  owasp_category: A03:2021 - Injection
+  location: "POST /rest/user/login (email field)"
+
+attack_steps:
+  - step: 1
+    action: "Navigate to login form"
+    actor: manual
+  - step: 2
+    action: "Submit email=' OR 1=1-- , password=<any>"
+    actor: manual
+  - step: 3
+    action: "Observe authenticated session as admin@juice-sh.op"
+    result: success
+
+observed_result:
+  authenticated_as: admin@juice-sh.op
+  password_required: false
+  session_established: true
+
+status: exploited_unverified_fix
