@@ -14,7 +14,7 @@
 (CWE-89) --ENABLES--> (authenticate_as: admin_account, no_credentials_required: true)
 (admin_account) --HAS_ACCESS--> (database)   # implied next attack hop, not yet exploited
 
-## Evidence
+## Evidenc
 - Juice Shop challenge tracker log: "Solved 2-star loginAdminChallenge (Login Admin)"
 - Source: `docker logs webapp --since 10m`
 - Timestamp: 2026-09-17 (session date)
