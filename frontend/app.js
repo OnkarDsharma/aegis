@@ -56,6 +56,7 @@ function render() {
   const body = document.querySelector("#findingsBody");
   body.replaceChildren();
   for (const finding of filtered) {
+    const recommendation = finding.blue_ai || {};
     const row = document.createElement("tr");
     row.innerHTML = `
       <td>
@@ -68,11 +69,30 @@ function render() {
       <td>${escapeHtml(finding.asset)}</td>
       <td><span class="source">${escapeHtml(finding.source_tool)}</span></td>
       <td>${escapeHtml(finding.classification)}</td>
+      <td>${renderRecommendation(recommendation)}</td>
       <td>${formatTime(finding.timestamp)}</td>
     `;
     body.appendChild(row);
   }
   document.querySelector("#emptyState").hidden = filtered.length > 0;
+}
+
+function renderRecommendation(recommendation) {
+  const steps = Array.isArray(recommendation.fix_steps) ? recommendation.fix_steps : [];
+  const renderedSteps = steps
+    .map((step) => `<li>${escapeHtml(step)}</li>`)
+    .join("");
+  return `
+    <div class="blue-ai">
+      <div class="blue-ai-head">
+        <span>Blue AI</span>
+        <strong>${escapeHtml(recommendation.priority || "review")}</strong>
+      </div>
+      <p>${escapeHtml(recommendation.summary || "Review this finding and document a fix.")}</p>
+      <ol>${renderedSteps}</ol>
+      <small>${escapeHtml(recommendation.verification || "Re-run the source tool after applying the fix.")}</small>
+    </div>
+  `;
 }
 
 function formatTime(value) {

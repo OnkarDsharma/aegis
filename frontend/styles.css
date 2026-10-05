@@ -123,7 +123,7 @@ select {
 table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 860px;
+  min-width: 1120px;
 }
 
 th,
@@ -191,6 +191,60 @@ tr:last-child td {
   color: var(--ok);
   font-weight: 800;
   text-transform: uppercase;
+}
+
+.blue-ai {
+  display: grid;
+  gap: 8px;
+  min-width: 300px;
+  max-width: 420px;
+}
+
+.blue-ai-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.blue-ai-head span {
+  color: #0a5f73;
+  font-size: 0.78rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.blue-ai-head strong {
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #e6f4f1;
+  color: #0a5f73;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.blue-ai p,
+.blue-ai ol {
+  margin: 0;
+}
+
+.blue-ai p,
+.blue-ai li,
+.blue-ai small {
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.blue-ai ol {
+  display: grid;
+  gap: 4px;
+  padding-left: 18px;
+}
+
+.blue-ai small {
+  display: block;
+  font-weight: 700;
 }
 
 .empty {

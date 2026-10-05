@@ -1,6 +1,6 @@
 import unittest
 
-from backend.aegis_dashboard import parse_caldera_report, parse_zap_report
+from backend.aegis_dashboard import recommend_blue_ai, parse_caldera_report, parse_zap_report
 
 
 class AegisDashboardTests(unittest.TestCase):
@@ -28,6 +28,8 @@ class AegisDashboardTests(unittest.TestCase):
         self.assertEqual(findings[0].severity, "high")
         self.assertEqual(findings[0].asset, "webapp")
         self.assertIn("CWE-89", findings[0].classification)
+        self.assertEqual(findings[0].blue_ai.priority, "fix-now")
+        self.assertIn("parameterized", " ".join(findings[0].blue_ai.fix_steps).lower())
 
     def test_parse_caldera_report_extracts_attack_technique(self):
         report = {
@@ -49,6 +51,19 @@ class AegisDashboardTests(unittest.TestCase):
         self.assertEqual(findings[0].source_tool, "caldera")
         self.assertEqual(findings[0].classification, "T1082")
         self.assertEqual(findings[0].severity, "info")
+        self.assertEqual(findings[0].blue_ai.priority, "observe")
+        self.assertIn("discovery", findings[0].blue_ai.summary.lower())
+
+    def test_blue_ai_recommends_security_headers(self):
+        recommendation = recommend_blue_ai(
+            "Content Security Policy Header Not Set",
+            "medium",
+            "webapp",
+            "ZAP-10038",
+        )
+
+        self.assertEqual(recommendation.priority, "fix-next")
+        self.assertIn("Content-Security-Policy", " ".join(recommendation.fix_steps))
 
 
 if __name__ == "__main__":
