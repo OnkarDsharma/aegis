@@ -17,9 +17,52 @@ services:
       - range_net
 
   employee:
-    image: docker.io/library/ubuntu:22.04
+    build:
+      context: .
+      dockerfile: machines/employee.Dockerfile
     container_name: employee
     command: sleep infinity
+    networks:
+      - range_net
+
+  zap:
+    image: ghcr.io/zaproxy/zaproxy:stable
+    container_name: zap
+    command: >
+      zap.sh -daemon -host 0.0.0.0 -port 8090
+      -config api.disablekey=true
+      -config api.addrs.addr.name=.*
+      -config api.addrs.addr.regex=true
+    depends_on:
+      - webapp
+    networks:
+      - range_net
+
+  caldera:
+    image: ghcr.io/mitre/caldera:latest
+    container_name: caldera
+    ports:
+      - "8888:8888"
+    networks:
+      - range_net
+
+  dashboard:
+    image: docker.io/library/python:3.12-slim
+    container_name: aegis-dashboard
+    working_dir: /app
+    command: python backend/aegis_dashboard.py
+    environment:
+      AEGIS_HOST: 0.0.0.0
+      AEGIS_PORT: 8000
+      AEGIS_RESULTS_DIR: /app/experiments/results
+      AEGIS_SCENARIOS_DIR: /app/experiments/scenarios
+      AEGIS_FRONTEND_DIR: /app/frontend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../backend:/app/backend:ro
+      - ../frontend:/app/frontend:ro
+      - ../experiments:/app/experiments:ro
     networks:
       - range_net
 

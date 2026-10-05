@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AEGIS Findings</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">AEGIS midsem range</p>
+          <h1>Unified vulnerability findings</h1>
+        </div>
+        <div class="status" id="status">Loading</div>
+      </header>
+
+      <section class="summary" aria-label="Findings summary">
+        <div>
+          <span id="totalFindings">0</span>
+          <small>Total findings</small>
+        </div>
+        <div>
+          <span id="highFindings">0</span>
+          <small>High or critical</small>
+        </div>
+        <div>
+          <span id="toolCount">0</span>
+          <small>Source tools</small>
+        </div>
+      </section>
+
+      <section class="toolbar" aria-label="Finding filters">
+        <label>
+          Source
+          <select id="sourceFilter">
+            <option value="">All sources</option>
+          </select>
+        </label>
+        <label>
+          Severity
+          <select id="severityFilter">
+            <option value="">All severities</option>
+            <option value="critical">Critical</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+            <option value="info">Info</option>
+          </select>
+        </label>
+      </section>
+
+      <section class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Finding</th>
+              <th>Severity</th>
+              <th>Asset</th>
+              <th>Source</th>
+              <th>Classification</th>
+              <th>Timestamp</th>
+            </tr>
+          </thead>
+          <tbody id="findingsBody"></tbody>
+        </table>
+        <div class="empty" id="emptyState" hidden>No findings match the current filters.</div>
+      </section>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>

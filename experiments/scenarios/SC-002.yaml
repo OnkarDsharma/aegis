@@ -1,0 +1,43 @@
+scenario_id: SC-002
+name: "Automated Web Finding - ZAP Confirmation"
+
+environment:
+  topology: single-app-range
+  target_image: docker.io/bkimminich/juice-shop:v14.0.0
+
+assets:
+  - employee
+  - webapp
+
+initial_access:
+  asset: zap
+  method: authenticated_range_scanner (internal range_net)
+
+objective:
+  target: webapp
+  goal: discover_application_layer_vulnerabilities_repeatably
+
+vulnerability:
+  class: Automated Web Vulnerability
+  severity: medium
+  cwe: pending_zap_report
+  owasp_category: pending_zap_report
+  location: "http://webapp:3000"
+  discovered_by: ZAP
+
+attack_steps:
+  - step: 1
+    action: "Run ZAP full or baseline scan against http://webapp:3000"
+    actor: zap
+  - step: 2
+    action: "Export JSON report into experiments/results/zap-scan-SC-series.json"
+    actor: zap
+  - step: 3
+    action: "Promote the most relevant confirmed alert into this scenario"
+    result: pending_real_scan
+
+observed_result:
+  dashboard_ingestion: ready
+  evidence_artifact: experiments/results/zap-scan-SC-series.json
+
+status: scaffolded_pending_scan
