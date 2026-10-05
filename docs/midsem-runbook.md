@@ -3,8 +3,10 @@
 ## Current State
 
 The range already contains Juice Shop, MySQL, and an `employee` host on the
-isolated `range_net`. This pass adds OWASP ZAP, MITRE Caldera, and a lightweight
-dashboard that unifies tool output into one findings table.
+isolated `range_net`. This pass adds OWASP ZAP and a lightweight dashboard that
+unifies tool output into one findings table. MITRE Caldera is defined as an
+optional Compose profile because rootless Podman may not be able to unpack the
+official Caldera image without host UID/GID configuration changes.
 
 ## Start the Range
 
@@ -17,8 +19,9 @@ docker compose up --build
 Expected local services:
 
 - Juice Shop: `http://localhost:8080`
-- Caldera: `http://localhost:8888`
 - AEGIS dashboard: `http://localhost:8000`
+
+ZAP runs inside the range for scans and does not expose a browser UI by default.
 
 ## ZAP Scan
 
@@ -26,13 +29,28 @@ Run this after `webapp` and `zap` are healthy:
 
 ```bash
 docker exec zap zap-full-scan.py -t http://webapp:3000 -J /zap/wrk/zap-scan-SC-series.json
-docker cp zap:/zap/wrk/zap-scan-SC-series.json ../experiments/results/zap-scan-SC-series.json
 ```
 
-Refresh the dashboard. ZAP alerts are read from `experiments/results/*.json`
-where the filename contains `zap`.
+Refresh the dashboard. `/zap/wrk` is mounted to `experiments/results`, so the
+JSON report is written directly into the dashboard's input directory. ZAP alerts
+are read from `experiments/results/*.json` where the filename contains `zap`.
 
 ## Caldera Operation
+
+Caldera is optional for the midsem demo path. To start it with Docker Engine or
+a Podman setup that can unpack the official image:
+
+```bash
+docker compose --profile caldera up -d caldera
+```
+
+Then open `http://localhost:8888`.
+
+If rootless Podman fails with an error about insufficient UIDs/GIDs, fix the host
+Podman user namespace configuration (`/etc/subuid`, `/etc/subgid`, then
+`podman system migrate`) or run this service with Docker Engine. The official
+GHCR Caldera image can contain file ownership values that rootless Podman cannot
+map on some machines.
 
 Start Sandcat from the `employee` container:
 

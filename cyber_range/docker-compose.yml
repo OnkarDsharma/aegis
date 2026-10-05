@@ -35,12 +35,16 @@ services:
       -config api.addrs.addr.regex=true
     depends_on:
       - webapp
+    volumes:
+      - ../experiments/results:/zap/wrk:z
     networks:
       - range_net
 
   caldera:
-    image: ghcr.io/mitre/caldera:latest
+    image: ${CALDERA_IMAGE:-ghcr.io/mitre/caldera:latest}
     container_name: caldera
+    profiles:
+      - caldera
     ports:
       - "8888:8888"
     networks:
@@ -60,9 +64,9 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ../backend:/app/backend:ro
-      - ../frontend:/app/frontend:ro
-      - ../experiments:/app/experiments:ro
+      - ../backend:/app/backend:ro,z
+      - ../frontend:/app/frontend:ro,z
+      - ../experiments:/app/experiments:ro,z
     networks:
       - range_net
 
