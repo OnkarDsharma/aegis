@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "aegis",
+      "runtimeExecutable": ".venv/bin/python",
+      "runtimeArgs": ["-m", "aegis", "serve"],
+      "port": 8000
+    }
+  ]
+}
