@@ -39,6 +39,7 @@ def settings(tmp_path: Path) -> Settings:
         policy_file=ROOT / "policy.yaml",
         ledger_path=tmp_path / "ledger.jsonl",
         kill_switch_file=tmp_path / "KILL",
+        coverage_dir=tmp_path / "nocov",  # pin to the core range; coverage has its own tests
         inventory_mode="compose",
         keycloak_url="",
         frontend_dir=ROOT / "frontend",

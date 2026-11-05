@@ -269,3 +269,151 @@ function renderEngagement(actions) {
 }
 
 document.querySelector("#engageBtn").addEventListener("click", runEngagement);
+
+function pct(value) {
+  return `${Math.round((value || 0) * 100)}%`;
+}
+
+async function runPilot() {
+  const btn = document.querySelector("#pilotBtn");
+  const panel = document.querySelector("#pilotPanel");
+  btn.disabled = true;
+  const prev = btn.textContent;
+  btn.textContent = "Measuring…";
+  try {
+    const report = await getJson("/api/pilot" + (state.at ? `?at=${encodeURIComponent(state.at)}` : ""), { method: "POST" });
+    const mx = report.metrics;
+    panel.hidden = false;
+    document.querySelector("#pmClosure").textContent = pct(mx.exposure.path_closure_rate);
+    document.querySelector("#pmExposure").textContent = pct(mx.exposure.exposure_reduction_pct);
+    document.querySelector("#pmDetect").textContent = pct(mx.detection.detection_rate);
+    document.querySelector("#pmCleanup").textContent = pct(mx.safety.verified_cleanup_rate);
+    document.querySelector("#pmRepeat").textContent = pct(mx.learning.repeatability_score);
+    document.querySelector("#pmHours").textContent = mx.efficiency.analyst_hours_saved_estimate;
+    const badge = document.querySelector("#pilotTargets");
+    const met = report.scorecard.targets_met;
+    badge.textContent = met ? "targets met" : "targets missed";
+    badge.className = `badge ${met ? "validated" : "theoretical"}`;
+    document.querySelector("#pilotReport").textContent = report.executive_report;
+    panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  } catch (error) {
+    document.querySelector("#status").textContent = "Pilot error";
+  } finally {
+    btn.disabled = false;
+    btn.textContent = prev;
+  }
+}
+
+async function runCampaign() {
+  const btn = document.querySelector("#campaignBtn");
+  const panel = document.querySelector("#campaignPanel");
+  btn.disabled = true;
+  const prev = btn.textContent;
+  btn.textContent = "Running…";
+  try {
+    const report = await getJson("/api/campaign" + (state.at ? `?at=${encodeURIComponent(state.at)}` : ""), { method: "POST" });
+    panel.hidden = false;
+    document.querySelector("#cmRounds").textContent = report.rounds_run;
+    document.querySelector("#cmTrajectory").textContent = report.exposure_trajectory.map((v) => v.toFixed(1)).join("→");
+    document.querySelector("#cmApplied").textContent = report.total_applied;
+    document.querySelector("#cmStaged").textContent = report.total_staged;
+    document.querySelector("#cmRegress").textContent = report.regressions.length;
+    const badge = document.querySelector("#campConverged");
+    badge.textContent = report.converged ? "converged" : "not converged";
+    badge.className = `badge ${report.converged ? "validated" : "theoretical"}`;
+    renderCampaign(report.rounds);
+    panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  } catch (error) {
+    document.querySelector("#status").textContent = "Campaign error";
+  } finally {
+    btn.disabled = false;
+    btn.textContent = prev;
+  }
+}
+
+function renderCampaign(rounds) {
+  const list = document.querySelector("#campaignList");
+  list.replaceChildren();
+  for (const r of rounds) {
+    const item = document.createElement("li");
+    item.className = "path";
+    if (r.note) {
+      item.innerHTML = `<div class="path-meta"><span class="badge validated">round ${r.round}</span><span>${escapeHtml(r.note)}</span></div>`;
+      list.appendChild(item);
+      continue;
+    }
+    const reopened = (r.reopened || []).length
+      ? `<span class="detect-tag missed">reopened ${r.reopened.length}</span>` : "";
+    const staged = (r.staged_for_approval || []).map((f) =>
+      `<small>Staged for approval: ${escapeHtml(f.title)} (tier ${escapeHtml(f.approval_tier)})</small>`).join("");
+    const conflicts = (r.conflicts_resolved || []).map((c) =>
+      `<small>Conflict resolved on ${escapeHtml(c.addresses)}: kept ${escapeHtml(c.kept)}, dropped ${escapeHtml(c.dropped)}</small>`).join("");
+    item.innerHTML = `<div class="path-meta">
+        <span class="badge validated">round ${r.round}</span>
+        <span>exposure <strong>${r.exposure_before.toFixed(1)}→${r.exposure_after.toFixed(1)}</strong></span>
+        <span class="detect-tag detected">validated ${r.validated}</span>
+        <span>proven ${r.fixes_proven}</span>
+        <span class="verdict proven">applied ${r.fixes_applied}</span>
+        <span>staged ${r.fixes_staged}</span>
+        <span>closed ${r.paths_closed}</span>
+        ${reopened}
+      </div>${staged}${conflicts}`;
+    list.appendChild(item);
+  }
+}
+
+async function runCompile() {
+  const btn = document.querySelector("#compileBtn");
+  const panel = document.querySelector("#compilePanel");
+  btn.disabled = true;
+  const prev = btn.textContent;
+  btn.textContent = "Compiling…";
+  try {
+    const report = await getJson("/api/compile?top_paths=40" + (state.at ? `&at=${encodeURIComponent(state.at)}` : ""), { method: "POST" });
+    panel.hidden = false;
+    const badge = document.querySelector("#compileTools");
+    badge.textContent = `${report.count} fixes · ${report.tools.length} tools`;
+    badge.className = "badge validated";
+    renderCompile(report.remediations);
+    panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  } catch (error) {
+    document.querySelector("#status").textContent = "Compile error";
+  } finally {
+    btn.disabled = false;
+    btn.textContent = prev;
+  }
+}
+
+function renderCompile(remediations) {
+  const list = document.querySelector("#compileList");
+  list.replaceChildren();
+  for (const entry of remediations) {
+    const rem = entry.remediation;
+    const ticket = entry.ticket;
+    const item = document.createElement("li");
+    item.className = "path";
+    const changes = rem.changes.map((c) => `
+      <div class="fix">
+        <div class="fix-head">
+          <span class="detect-tag detected">${escapeHtml(c.tool)}</span>
+          <strong>${escapeHtml(c.action)}</strong>
+          <span>${escapeHtml(c.platform)}</span>
+        </div>
+        <small>${escapeHtml(c.summary)}</small>
+        <pre class="report">${escapeHtml(c.artifact)}</pre>
+        <small>Rollback: ${escapeHtml(c.rollback)}</small>
+      </div>`).join("");
+    item.innerHTML = `<div class="path-meta">
+        <span class="verdict proven">${escapeHtml(rem.fix_type)}</span>
+        <strong>${escapeHtml(rem.title)}</strong>
+        <span>on ${escapeHtml(rem.target)}</span>
+        <span class="detect-tag">${escapeHtml(ticket.ticket_id)} · ${escapeHtml(ticket.priority)}</span>
+        <span>tools: ${escapeHtml(rem.tools.join(", "))}</span>
+      </div>${changes}`;
+    list.appendChild(item);
+  }
+}
+
+document.querySelector("#pilotBtn").addEventListener("click", runPilot);
+document.querySelector("#campaignBtn").addEventListener("click", runCampaign);
+document.querySelector("#compileBtn").addEventListener("click", runCompile);

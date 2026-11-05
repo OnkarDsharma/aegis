@@ -20,6 +20,10 @@ class Settings:
     scenarios_dir: Path = field(default_factory=lambda: _path("AEGIS_SCENARIOS_DIR", ROOT / "experiments" / "scenarios"))
     frontend_dir: Path = field(default_factory=lambda: _path("AEGIS_FRONTEND_DIR", ROOT / "frontend"))
     compose_file: Path = field(default_factory=lambda: _path("AEGIS_COMPOSE_FILE", ROOT / "cyber_range" / "docker-compose.yml"))
+    # Phase 6 (FR-4): broader-coverage source exports (cloud / kubernetes / OT).
+    # Any cloud-*.json, k8s-*.json, ot-*.json here is ingested. Point elsewhere
+    # (or at a missing dir) to disable the extra coverage.
+    coverage_dir: Path = field(default_factory=lambda: _path("AEGIS_COVERAGE_DIR", ROOT / "cyber_range" / "coverage"))
     policy_file: Path = field(default_factory=lambda: _path("AEGIS_POLICY_FILE", ROOT / "policy.yaml"))
     ledger_path: Path = field(default_factory=lambda: _path("AEGIS_LEDGER", ROOT / "var" / "ledger.jsonl"))
     kill_switch_file: Path = field(default_factory=lambda: _path("AEGIS_KILL_SWITCH", ROOT / "var" / "KILL_SWITCH"))

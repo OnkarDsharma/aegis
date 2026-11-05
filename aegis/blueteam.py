@@ -116,6 +116,23 @@ class BlueAgent:
                 rollback="Restore the previous secret from the sealed backup (not recommended).",
                 tier=TIER_LOW, blast=0.35, transform=_drop_node(vid),
             ))
+        # Phase 6 coverage findings carry a remediation hint naming the control to
+        # apply (cloud-firewall, bucket-policy, k8s-networkpolicy, rbac-tighten,
+        # ot-protocol-gateway, ...). Build the matching graph transform.
+        hint = vuln.props.get("remediation")
+        if hint:
+            strategy = str(hint.get("strategy", "neutralize"))
+            control = str(hint.get("control", hint.get("fix_type", "mitigating-control")))
+            transform = _drop_node(vid) if strategy == "drop" else _neutralize_vuln(vid, control)
+            fixes.append(self._mk(
+                str(hint.get("fix_type", "harden-config")),
+                f"Apply {hint.get('fix_type', 'hardening')} on {host}", str(hint.get("fix_type", "config")), host, vid,
+                predicted_impact=f"Closes '{vuln.name}' on {host} by applying {hint.get('fix_type')} "
+                                 f"({'removes the weakness' if strategy == 'drop' else 'adds a mitigating control'}). "
+                                 f"No legitimate workflow depends on the misconfiguration.",
+                rollback=f"Revert the {hint.get('fix_type')} change on {host}.",
+                tier=str(hint.get("tier", TIER_LOW)), blast=float(hint.get("blast", 0.3)), transform=transform,
+            ))
 
         # Path-structural fixes derived from how the path reaches its objective.
         for fix in self._path_fixes(graph, action_result):
@@ -135,19 +152,26 @@ class BlueAgent:
             refs = {s.split(":", 1)[1] for s in on_path if ":" in s}
             return edge.src in refs and edge.dst in refs
 
-        # Flat-network reachability to a crown jewel -> segment it off.
+        # Flat reachability into a high-value asset -> segment it off. This covers
+        # the on-prem workstation->database flat network and the Phase 6 coverage
+        # cases a collector flags as segmentable (a cloud route to a managed DB, a
+        # missing k8s NetworkPolicy, a flat OT conduit to a PLC).
         for e in graph.edges:
             if e.kind != EdgeKind.CAN_REACH or not in_path(e):
                 continue
             dst = graph.nodes.get(e.dst)
             src = graph.nodes.get(e.src)
-            if dst and src and dst.props.get("crown_jewel") and src.props.get("asset_type") == "workstation":
+            if not (dst and src):
+                continue
+            high_value = dst.props.get("crown_jewel") or float(dst.props.get("criticality", 0) or 0) >= 0.7
+            flat = bool(e.props.get("segmentable")) or src.props.get("asset_type") == "workstation"
+            if high_value and flat:
                 fixes.append(self._mk(
-                    f"segment-{src.name}-{dst.name}", f"Remove {src.name} from {dst.name}'s network", "segmentation",
+                    f"segment-{src.name}-{dst.name}", f"Remove {src.name}'s direct network path to {dst.name}", "segmentation",
                     dst.name, f"{e.src}->{e.dst}",
-                    predicted_impact=f"{src.name} can no longer reach {dst.name} directly. Workstations do not need "
-                                     f"database access, so no legitimate workflow is affected.",
-                    rollback=f"Re-attach {src.name} to the data network in the compose file.",
+                    predicted_impact=f"{src.name} can no longer reach {dst.name} directly. This path is a "
+                                     f"misconfiguration, so no legitimate workflow is affected.",
+                    rollback=f"Re-attach the direct route from {src.name} to {dst.name}.",
                     tier=TIER_LOW, blast=0.25,
                     transform=_drop_edges(lambda x, s=e.src, d=e.dst: x.kind == EdgeKind.CAN_REACH and x.src == s and x.dst == d),
                 ))

@@ -2,12 +2,32 @@
 # technique, target and environment are all explicitly permitted here.
 version: 1
 
-authorized_assets: [webapp, database, employee, keycloak, internet]
+authorized_assets:
+  - webapp
+  - database
+  - employee
+  - keycloak
+  - internet
+  # Phase 6 broader-coverage estate (cloud / kubernetes / OT), authorized for testing.
+  - cloud-web
+  - cloud-orders-db
+  - cloud-backups
+  - gcp-api
+  - storefront
+  - payments-api
+  - payments-db
+  - debug-shell
+  - engineer-laptop
+  - hist-server
+  - plc-line-1
 
 allowed_techniques:
   - sqli-login-probe
   - weak-credential-check
   - reachability-probe
+  - cloud-misconfig-probe   # Phase 6: cloud posture validation
+  - k8s-rbac-probe          # Phase 6: kubernetes RBAC / pod-security validation
+  - ot-protocol-probe       # Phase 6: OT protocol validation
   - T1082   # System Information Discovery
   - T1046   # Network Service Discovery
 

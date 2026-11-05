@@ -409,3 +409,16 @@ button:disabled {
 .fix small { color: var(--muted); display: block; margin-top: 2px; }
 .detect-tag { font-size: 0.78rem; font-weight: 700; padding: 2px 7px; border-radius: 5px; background: var(--bg); border: 1px solid var(--line); }
 .detect-tag.missed { color: var(--danger); border-color: var(--danger); }
+
+/* Phase 4/5 panels */
+.engage-summary { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+.report {
+  white-space: pre-wrap;
+  font: 0.82rem/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin: 0;
+  overflow-x: auto;
+}

@@ -1,0 +1,28 @@
+{
+  "_comment": "Example Kubernetes cluster export (namespaces, workloads, services, RBAC, network policies). Lab-only. Parsed by aegis/collectors/kubernetes.py (FR-1/4).",
+  "cluster": "aegis-lab",
+  "namespaces": ["frontend", "payments"],
+  "workloads": [
+    { "name": "storefront", "namespace": "frontend", "criticality": 0.5, "ports": [8080], "exposed": true },
+    { "name": "payments-api", "namespace": "payments", "criticality": 0.8, "ports": [9000] },
+    { "name": "payments-db", "namespace": "payments", "criticality": 0.95, "crown_jewel": true, "ports": [5432],
+      "misconfig": { "class": "CWE-306", "name": "Pod exposes the database with no NetworkPolicy isolation",
+                     "severity": "high", "grants": "data_read", "fix": "k8s-networkpolicy", "strategy": "neutralize" } },
+    { "name": "debug-shell", "namespace": "frontend", "criticality": 0.4, "privileged": true, "hostPath": true,
+      "misconfig": { "class": "CWE-250", "name": "Privileged pod with hostPath mount enables node breakout",
+                     "severity": "high", "grants": "foothold", "fix": "pod-security", "strategy": "neutralize",
+                     "probe_technique": "k8s-rbac-probe" } }
+  ],
+  "serviceaccounts": [
+    { "name": "deploy-bot", "namespace": "frontend", "cluster_admin": true,
+      "misconfig": { "class": "CWE-269", "name": "ServiceAccount bound to cluster-admin ClusterRole",
+                     "severity": "critical", "grants": "app_admin", "fix": "rbac-tighten", "strategy": "drop",
+                     "target": "payments-db" } }
+  ],
+  "reachability": [
+    { "from": "storefront", "to": "payments-api", "ports": [9000], "segmentable": true },
+    { "from": "payments-api", "to": "payments-db", "ports": [5432] },
+    { "from": "storefront", "to": "payments-db", "ports": [5432], "segmentable": true }
+  ],
+  "entry": ["storefront"]
+}

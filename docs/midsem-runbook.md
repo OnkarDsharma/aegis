@@ -116,3 +116,56 @@ The proof engine shows a fix will close the path before you touch anything. To a
 
 Then click **Re-collect**: the closed path disappears from the graph, and the `before`/`after` exposure drop is
 visible in the timeline.
+
+## Pilot metrics and adaptive campaign (Phases 4-5)
+
+**Pilot metrics (Phase 4).** Measure the Success Metrics and score them against pilot targets:
+
+```bash
+.venv/bin/python -m aegis pilot            # prints the executive report
+.venv/bin/python -m aegis pilot --json     # full metrics JSON
+```
+
+Or from the dashboard, click **Measure pilot metrics**. The loop is run several times to prove the numbers are
+repeatable (the engagement is deterministic, so repeatability is 100%). `POST /api/pilot` returns the same data plus
+the Markdown executive report for export. The measurement uses an in-memory ledger, so it leaves the real ledger
+untouched.
+
+**Adaptive campaign (Phase 5).** Run multiple rounds of red-blue co-adaptation with tiered auto-remediation:
+
+```bash
+.venv/bin/python -m aegis campaign --rounds 5
+```
+
+Or click **Run adaptive campaign**. Each round: the learned planner picks paths, the blue agent proves fixes, the
+low-risk tiers auto-apply (higher tiers are staged), and the next round re-plans against the smaller graph. The panel
+shows the exposure trajectory falling round over round, how many fixes were auto-applied vs staged, resolved
+conflicts, and any reopened paths (FR-27). Campaign evidence is written to the real hash-chained ledger
+(`GET /api/ledger/verify` to check integrity).
+
+## Broader coverage and the control compiler (Phases 6-7)
+
+**Broader coverage (Phase 6).** Example cloud / Kubernetes / OT exports live in `cyber_range/coverage/`
+(`cloud-estate.json`, `k8s-cluster.json`, `ot-assets.json`) and are ingested automatically on `collect`. With them
+enabled the dashboard's attack paths and findings span on-prem, cloud, Kubernetes and OT, and the crown-jewel
+objectives include the cloud order database, the payments database and the field PLC. These assets are authorized in
+`policy.yaml`. To run the range without them, set `AEGIS_COVERAGE_DIR` to a directory with no `cloud-*/k8s-*/ot-*`
+files. To edit or add coverage, drop another export in that directory (same JSON shape) and re-collect.
+
+**Cross-tool control compiler (Phase 7).** Compile every proven fix into concrete per-tool controls plus a change
+ticket and CMDB record:
+
+```bash
+.venv/bin/python -m aegis compile --top-paths 40
+```
+
+Or click **Compile controls** on the dashboard. Each proven fix is rendered as the actual rule / manifest / command
+for the right platform (AWS security group, Kubernetes NetworkPolicy, OT protocol gateway, iptables, ModSecurity,
+Vault rotation, RBAC, plus a SIEM detection), with a rollback. To print the change ticket for one fix as Markdown:
+
+```bash
+.venv/bin/python -m aegis compile --ticket <CHG-id>
+```
+
+Nothing is pushed to a live system: the compiler produces the reviewable change set that a human (or the low-risk
+auto-remediation gate) then applies.

@@ -35,6 +35,17 @@ TECHNIQUE_FOR_CWE = {
     "798": "weak-credential-check",
 }
 
+# Telemetry signature emitted per technique. Phase 6 coverage collectors may also
+# carry their own probe_technique / probe_signature on a finding.
+SIGNATURE_FOR = {
+    "sqli-login-probe": "sqli:login:or-1-1",
+    "weak-credential-check": "auth:default-credentials",
+    "reachability-probe": "net:connect",
+    "cloud-misconfig-probe": "cloud:misconfig:public-access",
+    "k8s-rbac-probe": "k8s:rbac:excessive",
+    "ot-protocol-probe": "ot:protocol:no-auth",
+}
+
 
 @dataclass
 class TelemetryEvent:
@@ -119,22 +130,35 @@ class RedAgent:
                     return actions
         return actions
 
+    def plan_paths(self, graph: AttackGraph, paths: list[AttackPath], max_actions: int = 12) -> list[ValidationAction]:
+        """Plan validation actions for a *given* set of paths (used by the adaptive
+        campaign, which chooses the paths itself). Dedups weaknesses within this
+        set so one action validates each distinct weakness."""
+        actions: list[ValidationAction] = []
+        seen: set[str] = set()
+        for path in paths:
+            for vid in path.vulnerabilities:
+                if vid in seen or vid not in graph.nodes:
+                    continue
+                seen.add(vid)
+                action = self._action_for(graph, graph.nodes[vid], path)
+                if action:
+                    actions.append(action)
+                if len(actions) >= max_actions:
+                    return actions
+        return actions
+
     def _action_for(self, graph: AttackGraph, vuln, path: AttackPath) -> ValidationAction | None:
         props = vuln.props
         cwe = str(props.get("cwe", "")).replace("CWE-", "").split("/")[0].strip()
-        technique = TECHNIQUE_FOR_CWE.get(cwe)
-        if technique is None:
-            # Generic reachability proof for weaknesses without a specific probe.
-            technique = "reachability-probe"
+        # A collector may name the probe directly (Phase 6 coverage findings);
+        # otherwise map from CWE, else fall back to a generic reachability proof.
+        technique = props.get("probe_technique") or TECHNIQUE_FOR_CWE.get(cwe) or "reachability-probe"
         from .model import EdgeKind
 
         host = next((src for src, _ in graph._in(vuln.id, EdgeKind.HAS_VULNERABILITY)), "")
         asset = graph.nodes[host].name if host in graph.nodes else "unknown"
-        signature = {
-            "sqli-login-probe": "sqli:login:or-1-1",
-            "weak-credential-check": "auth:default-credentials",
-            "reachability-probe": "net:connect",
-        }[technique]
+        signature = props.get("probe_signature") or SIGNATURE_FOR.get(technique, "net:connect")
         return ValidationAction(
             action_id="act-" + hashlib.sha1(f"{technique}|{vuln.id}".encode()).hexdigest()[:10],
             name=f"Validate {vuln.name} on {asset}",

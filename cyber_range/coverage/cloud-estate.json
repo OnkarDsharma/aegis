@@ -1,0 +1,40 @@
+{
+  "_comment": "Example multi-cloud inventory export (AWS + GCP), the kind a cloud-provider inventory API would return. All names and ids are lab-only. Parsed by aegis/collectors/cloud.py (FR-1/4/6).",
+  "accounts": [
+    {
+      "provider": "aws",
+      "account_id": "111122223333",
+      "resources": [
+        { "type": "ec2", "name": "cloud-web", "criticality": 0.6, "networks": ["aws-public"], "ports": [443], "public": true },
+        { "type": "rds", "name": "cloud-orders-db", "criticality": 0.9, "crown_jewel": true, "networks": ["aws-data"], "ports": [5432],
+          "misconfig": { "class": "CWE-284", "name": "Security group allows 0.0.0.0/0 to the database port",
+                         "severity": "high", "grants": "data_read", "fix": "cloud-firewall" } },
+        { "type": "s3", "name": "cloud-backups", "criticality": 0.8, "crown_jewel": true, "networks": ["aws-data"],
+          "public_access": true,
+          "misconfig": { "class": "CWE-284", "name": "Object storage bucket is publicly readable",
+                         "severity": "critical", "grants": "data_read", "fix": "bucket-policy" } }
+      ],
+      "identities": [
+        { "name": "svc-ci-deployer", "identity_type": "service", "privileged": true, "admin_of": ["cloud-web"] }
+      ]
+    },
+    {
+      "provider": "gcp",
+      "account_id": "aegis-lab-01",
+      "resources": [
+        { "type": "gce", "name": "gcp-api", "criticality": 0.6, "networks": ["gcp-vpc"], "ports": [8443], "public": true,
+          "misconfig": { "class": "CWE-1188", "name": "Metadata server reachable with default service-account token",
+                         "severity": "high", "grants": "foothold", "fix": "metadata-guard",
+                         "probe_technique": "cloud-misconfig-probe" } }
+      ],
+      "identities": []
+    }
+  ],
+  "reachability": [
+    { "from": "cloud-web", "to": "cloud-orders-db", "ports": [5432], "segmentable": true },
+    { "from": "gcp-api", "to": "cloud-orders-db", "ports": [5432], "segmentable": true }
+  ],
+  "federation": [
+    { "identity": "svc-ci-deployer", "trusts_idp": "keycloak" }
+  ]
+}

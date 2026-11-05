@@ -8,7 +8,7 @@ from typing import Any
 from ..config import Settings
 from ..model import Observation
 from ..store import GraphStore, normalize_time
-from . import identity, inventory, scanners, scenarios
+from . import cloud, identity, inventory, kubernetes, ot, scanners, scenarios
 
 log = logging.getLogger("aegis.collectors")
 
@@ -61,11 +61,26 @@ def gather(settings: Settings) -> tuple[list[Observation], list[dict[str, Any]]]
         reports = sorted(p for p in settings.results_dir.glob("*.json") if "caldera" in p.name.lower())
         return scanners.caldera_observation(reports) if reports else None
 
+    def coverage(prefix: str, module) -> Any:
+        # Phase 6 (FR-4): ingest a cloud / kubernetes / OT export if one is present.
+        directory = settings.coverage_dir
+        if not directory.exists():
+            return None
+        files = sorted(directory.glob(f"{prefix}-*.json"))
+        if not files:
+            return None
+        data, evidence = module.from_file(files[0])
+        builder = getattr(module, f"{module.__name__.rsplit('.', 1)[-1]}_observation")
+        return builder(data, evidence)
+
     attempt("inventory", run_inventory)
     attempt("identity", run_identity)
     attempt("zap", run_zap)
     attempt("caldera", run_caldera)
     attempt("scenarios", lambda: scenarios.scenario_observation(settings.scenarios_dir))
+    attempt("cloud", lambda: coverage("cloud", cloud))
+    attempt("kubernetes", lambda: coverage("k8s", kubernetes))
+    attempt("ot", lambda: coverage("ot", ot))
     return observations, status
 
 

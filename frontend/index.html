@@ -20,6 +20,9 @@
           </label>
           <button type="button" id="collectBtn">Re-collect</button>
           <button type="button" id="engageBtn">Run red-blue loop</button>
+          <button type="button" id="pilotBtn">Measure pilot metrics</button>
+          <button type="button" id="campaignBtn">Run adaptive campaign</button>
+          <button type="button" id="compileBtn">Compile controls</button>
           <div class="status" id="status">Loading</div>
         </div>
       </header>
@@ -69,6 +72,45 @@
           <div><span id="engExposure">0</span><small>Exposure if applied</small></div>
         </div>
         <ol class="paths" id="engageList"></ol>
+      </section>
+
+      <section class="panel" id="pilotPanel" aria-label="Pilot metrics" hidden>
+        <div class="panel-head">
+          <h2>Pilot metrics <span class="badge" id="pilotTargets">&nbsp;</span></h2>
+          <small>Phase 4 &middot; Success Metrics, measured from recorded evidence over repeated runs</small>
+        </div>
+        <div class="summary engage-summary">
+          <div><span id="pmClosure">0</span><small>Path closure rate</small></div>
+          <div><span id="pmExposure">0</span><small>Exposure reduction</small></div>
+          <div><span id="pmDetect">0</span><small>Detection rate</small></div>
+          <div><span id="pmCleanup">0</span><small>Verified cleanup</small></div>
+          <div><span id="pmRepeat">0</span><small>Repeatability</small></div>
+          <div><span id="pmHours">0</span><small>Analyst hours saved</small></div>
+        </div>
+        <pre class="report" id="pilotReport"></pre>
+      </section>
+
+      <section class="panel" id="campaignPanel" aria-label="Adaptive campaign" hidden>
+        <div class="panel-head">
+          <h2>Adaptive campaign <span class="badge" id="campConverged">&nbsp;</span></h2>
+          <small>Phase 5 &middot; multi-round red-blue co-learning with tiered auto-remediation</small>
+        </div>
+        <div class="summary engage-summary">
+          <div><span id="cmRounds">0</span><small>Rounds</small></div>
+          <div><span id="cmTrajectory">0</span><small>Exposure trajectory</small></div>
+          <div><span id="cmApplied">0</span><small>Fixes auto-applied</small></div>
+          <div><span id="cmStaged">0</span><small>Staged for approval</small></div>
+          <div><span id="cmRegress">0</span><small>Regressions (reopened)</small></div>
+        </div>
+        <ol class="paths" id="campaignList"></ol>
+      </section>
+
+      <section class="panel" id="compilePanel" aria-label="Cross-tool control compiler" hidden>
+        <div class="panel-head">
+          <h2>Cross-tool control compiler <span class="badge" id="compileTools">&nbsp;</span></h2>
+          <small>Phase 7 &middot; each proven fix compiled into concrete per-tool controls + a change ticket (FR-34/35)</small>
+        </div>
+        <ol class="paths" id="compileList"></ol>
       </section>
 
       <section class="toolbar" aria-label="Finding filters">

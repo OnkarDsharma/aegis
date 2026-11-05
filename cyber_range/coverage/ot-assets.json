@@ -1,0 +1,25 @@
+{
+  "_comment": "Example OT/ICS asset register plus remote endpoints (Purdue-style zones). Lab-only. Parsed by aegis/collectors/ot.py (FR-1/4).",
+  "zones": [
+    { "name": "enterprise", "level": 4 },
+    { "name": "dmz-ot", "level": 3 },
+    { "name": "control", "level": 2 },
+    { "name": "field", "level": 1 }
+  ],
+  "endpoints": [
+    { "name": "engineer-laptop", "entry_point": true, "zone": "enterprise",
+      "reaches": [
+        { "to": "hist-server", "ports": [1433] },
+        { "to": "plc-line-1", "ports": [502], "segmentable": true }
+      ] }
+  ],
+  "devices": [
+    { "name": "hist-server", "type": "historian", "zone": "dmz-ot", "criticality": 0.6, "ports": [1433],
+      "reaches": [ { "to": "plc-line-1", "ports": [502], "segmentable": true } ] },
+    { "name": "hmi-station", "type": "hmi", "zone": "control", "criticality": 0.7, "ports": [5900] },
+    { "name": "plc-line-1", "type": "plc", "zone": "field", "criticality": 1.0, "crown_jewel": true, "ports": [502],
+      "misconfig": { "class": "CWE-306", "name": "PLC speaks Modbus with no authentication",
+                     "severity": "critical", "grants": "app_admin", "fix": "ot-protocol-gateway",
+                     "strategy": "neutralize", "probe_technique": "ot-protocol-probe" } }
+  ]
+}

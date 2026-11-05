@@ -10,12 +10,14 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from . import __version__
+from .adaptive import AdaptiveCampaign, CampaignConfig
 from .blue import recommend_blue_ai
 from .collectors import collect
 from .config import Settings
 from .graph import AttackGraph, diff_paths
 from .ledger import EvidenceLedger
 from .loop import LoopConfig, RedBlueLoop
+from .metrics import MetricsEngine, PilotReport, PilotTargets
 from .model import SEVERITY_ORDER, EdgeKind, NodeKind
 from .safety import KillSwitch, Policy, SafetyAgent
 from .store import GraphStore, normalize_time
@@ -115,6 +117,57 @@ def create_app(settings: Settings | None = None, store: GraphStore | None = None
         loop = RedBlueLoop(safety, ledger)
         report = loop.run(graph_at(at), LoopConfig(top_paths=top_paths, max_actions=max_actions))
         return report.as_dict()
+
+    @app.post("/api/pilot")
+    def pilot(at: str | None = None, top_paths: int = 5, repeat: int = 3) -> dict[str, Any]:
+        """Phase 4: measure Success Metrics over the current graph and score against
+        pilot targets. Uses an in-memory ledger so measurement leaves no side effects."""
+        engine = MetricsEngine(policy, kill_switch)
+        measurement = engine.measure(graph_at(at), LoopConfig(top_paths=top_paths), repeat=repeat)
+        report = PilotReport(measurement, PilotTargets())
+        return {**report.as_dict(), "executive_report": report.executive_report()}
+
+    @app.post("/api/campaign")
+    def campaign(at: str | None = None, rounds: int = 4, paths_per_round: int = 3) -> dict[str, Any]:
+        """Phase 5: run a multi-round adaptive red-blue campaign with tiered
+        auto-remediation. Evidence is written to the real hash-chained ledger."""
+        safety = SafetyAgent(policy, kill_switch)
+        report = AdaptiveCampaign(safety, ledger).run(
+            graph_at(at), CampaignConfig(rounds=rounds, paths_per_round=paths_per_round)
+        )
+        return report.as_dict()
+
+    @app.post("/api/compile")
+    def compile_controls(at: str | None = None, top_paths: int = 8, max_actions: int = 12) -> dict[str, Any]:
+        """Phase 7: compile every proven fix for the current graph into concrete
+        cross-tool control changes plus a change ticket and CMDB record (FR-34/35)."""
+        from .blueteam import BlueAgent, ProofEngine
+        from .compiler import ControlCompiler
+        from .integrations import TicketingAdapter
+        from .redteam import RedAgent
+
+        g = graph_at(at)
+        red, blue, proof = RedAgent(), BlueAgent(), ProofEngine()
+        compiler, tickets = ControlCompiler(), TicketingAdapter()
+        out: list[dict[str, Any]] = []
+        seen: set[str] = set()
+        for action in red.plan(g, top_paths=top_paths, max_actions=max_actions):
+            result = red.execute(action, g, "twin")
+            if not result.succeeded:
+                continue
+            for fix in blue.propose(g, result):
+                pr = proof.prove(g, fix, action, "twin")
+                if pr.verdict != "proven" or fix.fix_id in seen:
+                    continue
+                seen.add(fix.fix_id)
+                compiled = compiler.compile(fix, g)
+                ticket = tickets.create_change_ticket(
+                    compiled, {"closed": pr.closed, "regression_ok": pr.regression_ok, "ledger_head": ledger.head})
+                cmdb = tickets.create_cmdb_record(compiled, ticket)
+                out.append({"remediation": compiled.as_dict(), "ticket": ticket.as_dict(),
+                            "ticket_markdown": ticket.as_markdown(), "cmdb": cmdb.as_dict()})
+        return {"count": len(out), "tools": sorted({t for o in out for t in o["remediation"]["tools"]}),
+                "remediations": out}
 
     @app.get("/api/policy")
     def get_policy() -> dict[str, Any]:

@@ -21,6 +21,13 @@ DEFAULT_RULES: list[dict[str, Any]] = [
      "contains": "auth:default-credentials", "latency_s": 12, "severity": "medium"},
     {"id": "SIGMA-DISCO-1", "name": "Host discovery command", "technique": "T1082",
      "contains": "", "latency_s": 30, "severity": "low"},
+    # Phase 6 broader-coverage detections (cloud / kubernetes / OT).
+    {"id": "SIGMA-CLOUD-1", "name": "Cloud misconfiguration access", "technique": "cloud-misconfig-probe",
+     "contains": "cloud:", "latency_s": 8, "severity": "high"},
+    {"id": "SIGMA-K8S-1", "name": "Excessive Kubernetes RBAC / privileged pod", "technique": "k8s-rbac-probe",
+     "contains": "k8s:", "latency_s": 10, "severity": "high"},
+    {"id": "SIGMA-OT-1", "name": "Unauthenticated OT protocol access", "technique": "ot-protocol-probe",
+     "contains": "ot:", "latency_s": 15, "severity": "critical"},
     # Note: there is deliberately no rule for "net:connect" (reachability-probe),
     # so plain reachability validation is MISSED until the blue agent adds one.
 ]
