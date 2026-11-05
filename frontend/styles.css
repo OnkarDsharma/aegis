@@ -62,7 +62,7 @@ h1 {
 
 .summary {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 12px;
   margin-bottom: 16px;
 }
@@ -272,4 +272,126 @@ tr:last-child td {
   select {
     width: 100%;
   }
+}
+
+.top-actions {
+  display: flex;
+  align-items: end;
+  gap: 12px;
+}
+
+button {
+  padding: 9px 14px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: var(--accent);
+  color: white;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.panel {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.panel-head h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.panel-head small {
+  color: var(--muted);
+}
+
+.paths {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.path {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.path-meta {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.path-meta strong {
+  color: var(--ink);
+}
+
+.chain {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+}
+
+.hop {
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+}
+
+.hop.vuln {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.hop.id {
+  border-color: var(--warn);
+  color: var(--warn);
+}
+
+.arrow {
+  color: var(--muted);
+}
+
+.badge.validated { background: #fde8e7; color: var(--danger); }
+.badge.exploitable { background: #fff3db; color: var(--warn); }
+.badge.theoretical { background: #e8eef5; color: var(--muted); }
+
+.reach {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.reach.on_attack_path { color: var(--danger); }
+
+@media (max-width: 760px) {
+  .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .topbar, .top-actions { flex-direction: column; align-items: stretch; }
 }

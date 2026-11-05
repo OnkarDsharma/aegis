@@ -1,11 +1,27 @@
+# AEGIS cyber range.
+#
+# Zones:
+#   dmz_net   internet-facing web app + scanner
+#   corp_net  employee workstation, IdP, web app back side, adversary emulation
+#   data_net  database. The employee host is ALSO attached here on purpose:
+#             a flat-network misconfiguration the attack graph should surface.
+#
+# aegis.* labels drive the inventory collector (see aegis/collectors/inventory.py).
+# All secrets below are lab-only test values for this isolated range.
+
 services:
   webapp:
     image: docker.io/bkimminich/juice-shop:v14.0.0
     container_name: webapp
     ports:
       - "8080:3000"
+    labels:
+      aegis.asset_type: server
+      aegis.criticality: "0.7"
+      aegis.ports: "3000"
     networks:
-      - range_net
+      - dmz_net
+      - corp_net
 
   database:
     image: docker.io/library/mysql:5.7.31
@@ -13,20 +29,49 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: rootpass123
       MYSQL_DATABASE: appdb
+    labels:
+      aegis.asset_type: database
+      aegis.criticality: "1.0"
+      aegis.crown_jewel: "true"
+      aegis.ports: "3306"
     networks:
-      - range_net
+      - data_net
 
   employee:
     build:
       context: .
       dockerfile: machines/employee.Dockerfile
     container_name: employee
+    hostname: employee
     command: sleep infinity
+    labels:
+      aegis.asset_type: workstation
+      aegis.criticality: "0.3"
+      aegis.entry_point: "true"   # assumed-breach starting point
     networks:
-      - range_net
+      - corp_net
+      - data_net
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.8.2
+    container_name: keycloak
+    command: start-dev --import-realm
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+    ports:
+      - "8180:8080"
+    volumes:
+      - ./keycloak:/opt/keycloak/data/import:ro,z
+    labels:
+      aegis.asset_type: idp
+      aegis.criticality: "0.9"
+      aegis.ports: "8080"
+    networks:
+      - corp_net
 
   zap:
-    image: ghcr.io/zaproxy/zaproxy:stable
+    image: ghcr.io/zaproxy/zaproxy:2.16.0
     container_name: zap
     command: >
       zap.sh -daemon -host 0.0.0.0 -port 8090
@@ -37,39 +82,54 @@ services:
       - webapp
     volumes:
       - ../experiments/results:/zap/wrk:z
+    labels:
+      aegis.kind: control
+      aegis.control_type: scanner
+      aegis.protects: webapp
     networks:
-      - range_net
+      - dmz_net
 
   caldera:
-    image: ${CALDERA_IMAGE:-ghcr.io/mitre/caldera:latest}
+    image: ${CALDERA_IMAGE:-ghcr.io/mitre/caldera:5.2.0}
     container_name: caldera
     profiles:
       - caldera
     ports:
       - "8888:8888"
+    labels:
+      aegis.ignore: "true"
     networks:
-      - range_net
+      - corp_net
 
   dashboard:
-    image: docker.io/library/python:3.12-slim
+    build:
+      context: ..
+      dockerfile: cyber_range/machines/dashboard.Dockerfile
     container_name: aegis-dashboard
-    working_dir: /app
-    command: python backend/aegis_dashboard.py
     environment:
       AEGIS_HOST: 0.0.0.0
       AEGIS_PORT: 8000
-      AEGIS_RESULTS_DIR: /app/experiments/results
-      AEGIS_SCENARIOS_DIR: /app/experiments/scenarios
-      AEGIS_FRONTEND_DIR: /app/frontend
+      AEGIS_DB: /data/aegis.db
+      AEGIS_INVENTORY: compose
+      AEGIS_KEYCLOAK_URL: http://keycloak:8080
+      AEGIS_KEYCLOAK_ADMIN: admin
+      AEGIS_KEYCLOAK_PASSWORD: admin
     ports:
       - "8000:8000"
     volumes:
-      - ../backend:/app/backend:ro,z
-      - ../frontend:/app/frontend:ro,z
       - ../experiments:/app/experiments:ro,z
+      - ./docker-compose.yml:/app/cyber_range/docker-compose.yml:ro,z
+      - ./keycloak:/app/cyber_range/keycloak:ro,z
+      - aegis-data:/data
+    labels:
+      aegis.ignore: "true"
     networks:
-      - range_net
+      - corp_net
 
 networks:
-  range_net:
-    driver: bridge
+  dmz_net:
+  corp_net:
+  data_net:
+
+volumes:
+  aegis-data:

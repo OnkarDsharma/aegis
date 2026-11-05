@@ -1,10 +1,8 @@
 # AEGIS Results Artifacts
 
-Place generated tool reports here for the dashboard to ingest:
+Place generated tool reports here for the collectors to ingest. JSON files in this folder are git-ignored.
 
-- `zap-scan-SC-series.json` from OWASP ZAP
-- `caldera-op-SC-series.json` from MITRE Caldera
+- `*zap*.json`: OWASP ZAP JSON report. The newest one is authoritative.
+- `*caldera*.json`: MITRE Caldera operation report export. All of them are ingested.
 
-The dashboard intentionally falls back to the checked-in manual scenario files
-when no automated reports exist yet, so the UI can still be smoke-tested before
-the first range run.
+Test fixtures live in `tests/fixtures/`.

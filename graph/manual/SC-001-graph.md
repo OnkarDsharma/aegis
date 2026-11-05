@@ -1,5 +1,7 @@
 # SC-001 — Manual Graph Representation
 
+> Superseded by the generated graph: `python -m aegis paths` / `GET /api/graph`. Kept as the original hand-drawn reference.
+
 ## Nodes
 - employee (asset, type: workstation)
 - webapp (asset, type: server, image: juice-shop:v14.0.0)
@@ -14,7 +16,9 @@
 (ZAP) --DISCOVERED_BY_AUTOMATION--> (CWE-89)
 (CWE-89) --LOCATED_AT--> ("POST /rest/user/login")
 (CWE-89) --ENABLES--> (authenticate_as: admin_account, no_credentials_required: true)
-(admin_account) --HAS_ACCESS--> (database)   # implied next attack hop, not yet exploited
+# Note: Juice Shop stores its data in its own SQLite file, not the range MySQL, so there is
+# no admin_account -> database edge. The generated graph (GET /api/graph) reaches the
+# database only through the workstation, bob's db-admin role, or the IdP.
 
 ## Evidence
 - Juice Shop challenge tracker log: "Solved 2-star loginAdminChallenge (Login Admin)"

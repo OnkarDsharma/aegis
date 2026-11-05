@@ -22,7 +22,13 @@ vulnerability:
   class: SQL Injection
   cwe: CWE-89
   owasp_category: A03:2021 - Injection
+  severity: high
   location: "POST /rest/user/login (email field)"
+  port: 3000
+  # What a successful exploit gives the attacker, used by the attack graph.
+  grants:
+    - asset: webapp
+      level: app_admin
 
 attack_steps:
   - step: 1

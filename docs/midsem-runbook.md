@@ -2,10 +2,15 @@
 
 ## Current State
 
-The range already contains Juice Shop, MySQL, and an `employee` host on the
-isolated `range_net`. This pass adds OWASP ZAP and a lightweight dashboard that
-unifies tool output into one findings table. MITRE Caldera is defined as an
-optional Compose profile because rootless Podman may not be able to unpack the
+The range is split into three zones:
+- `dmz_net`: Juice Shop and ZAP
+- `corp_net`: the `employee` workstation, Keycloak (IdP, realm `aegis`), and the back side of Juice Shop
+- `data_net`: MySQL. The workstation is also attached here on purpose, as a flat-network misconfiguration.
+
+The dashboard (`python -m aegis serve`) collects inventory, identities, ZAP and
+Caldera reports, and validated scenarios into a temporal attack graph. It ranks
+attack paths and lists findings with their reachability. MITRE Caldera is an
+optional Compose profile, because rootless Podman may not be able to unpack the
 official Caldera image without host UID/GID configuration changes.
 
 ## Start the Range
@@ -19,6 +24,7 @@ docker compose up --build
 Expected local services:
 
 - Juice Shop: `http://localhost:8080`
+- Keycloak: `http://localhost:8180` (lab admin `admin` / `admin`; this weak bootstrap secret is deliberate and shows up as an attack path)
 - AEGIS dashboard: `http://localhost:8000`
 
 ZAP runs inside the range for scans and does not expose a browser UI by default.
@@ -28,12 +34,13 @@ ZAP runs inside the range for scans and does not expose a browser UI by default.
 Run this after `webapp` and `zap` are healthy:
 
 ```bash
-docker exec zap zap-full-scan.py -t http://webapp:3000 -J /zap/wrk/zap-scan-SC-series.json
+docker exec zap zap-full-scan.py -t http://webapp:3000 -J zap-scan-SC-series.json
 ```
 
-Refresh the dashboard. `/zap/wrk` is mounted to `experiments/results`, so the
-JSON report is written directly into the dashboard's input directory. ZAP alerts
-are read from `experiments/results/*.json` where the filename contains `zap`.
+Click **Re-collect** on the dashboard (or `POST /api/collect`). `/zap/wrk` is mounted to `experiments/results`, so the
+JSON report is written directly into the dashboard's input directory. The
+newest `experiments/results/*zap*.json` is authoritative: alerts missing from a
+rescan are closed in the temporal graph.
 
 ## Caldera Operation
 
@@ -70,16 +77,11 @@ The dashboard ingests Caldera reports when the filename contains `caldera`.
 
 ## Dashboard API
 
-Without containers, the dashboard can be run directly from the repo root:
+Without containers, run it from the repo root (see README for setup):
 
 ```bash
-python backend/aegis_dashboard.py
+.venv/bin/python -m aegis serve
 ```
 
-Endpoints:
-
-- `GET /api/health`
-- `GET /api/findings`
-
-When no automated reports exist yet, the API falls back to checked-in scenario
-YAML so the frontend remains demoable while scan artifacts are pending.
+See the README for the full endpoint list. Pick an earlier time in **Graph as of**
+on the dashboard to view the graph and paths as they were then.

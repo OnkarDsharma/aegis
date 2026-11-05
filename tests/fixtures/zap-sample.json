@@ -1,0 +1,35 @@
+{
+  "@version": "2.16.0",
+  "site": [
+    {
+      "@name": "http://webapp:3000",
+      "@host": "webapp",
+      "@port": "3000",
+      "alerts": [
+        {
+          "pluginid": "40018",
+          "alert": "SQL Injection",
+          "riskcode": "3",
+          "confidence": "2",
+          "riskdesc": "High (Medium)",
+          "desc": "<p>SQL injection may be possible.</p>",
+          "solution": "<p>Use prepared statements.</p>",
+          "instances": [{"uri": "http://webapp:3000/rest/user/login", "method": "POST", "param": "email"}],
+          "cweid": "89",
+          "wascid": "19"
+        },
+        {
+          "pluginid": "10038",
+          "alert": "Content Security Policy (CSP) Header Not Set",
+          "riskcode": "2",
+          "confidence": "3",
+          "riskdesc": "Medium (High)",
+          "desc": "<p>CSP header missing.</p>",
+          "instances": [{"uri": "http://webapp:3000/", "method": "GET"}],
+          "cweid": "693",
+          "wascid": "15"
+        }
+      ]
+    }
+  ]
+}

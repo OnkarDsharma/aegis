@@ -1,0 +1,63 @@
+{
+  "realm": "aegis",
+  "enabled": true,
+  "roles": {
+    "realm": [
+      {
+        "name": "workstation-user",
+        "description": "Interactive login to corporate workstations",
+        "attributes": { "aegis.login_to": ["employee"] }
+      },
+      {
+        "name": "db-admin",
+        "description": "Administrative access to the application database",
+        "attributes": { "aegis.admin_of": ["database"] }
+      },
+      {
+        "name": "webapp-admin",
+        "description": "Administrative access to the web shop",
+        "attributes": { "aegis.admin_of": ["webapp"] }
+      }
+    ]
+  },
+  "users": [
+    {
+      "username": "alice",
+      "enabled": true,
+      "email": "alice@aegis.range",
+      "firstName": "Alice",
+      "lastName": "Employee",
+      "attributes": { "aegis.session_on": ["employee"] },
+      "credentials": [{ "type": "password", "value": "Range-Alice-Lab-2026!", "temporary": false }],
+      "realmRoles": ["workstation-user"]
+    },
+    {
+      "username": "bob",
+      "enabled": true,
+      "email": "bob@aegis.range",
+      "firstName": "Bob",
+      "lastName": "DBA",
+      "attributes": { "aegis.session_on": ["employee"] },
+      "credentials": [{ "type": "password", "value": "Range-Bob-Lab-2026!", "temporary": false }],
+      "realmRoles": ["workstation-user", "db-admin"]
+    },
+    {
+      "username": "carol",
+      "enabled": true,
+      "email": "carol@aegis.range",
+      "firstName": "Carol",
+      "lastName": "ShopOps",
+      "credentials": [{ "type": "password", "value": "Range-Carol-Lab-2026!", "temporary": false }],
+      "realmRoles": ["webapp-admin"]
+    },
+    {
+      "username": "svc-backup",
+      "enabled": true,
+      "email": "svc-backup@aegis.range",
+      "firstName": "Backup",
+      "lastName": "Service",
+      "credentials": [{ "type": "password", "value": "Range-Backup-Lab-2026!", "temporary": false }],
+      "realmRoles": ["db-admin"]
+    }
+  ]
+}
