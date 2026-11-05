@@ -14,7 +14,10 @@ from .blue import recommend_blue_ai
 from .collectors import collect
 from .config import Settings
 from .graph import AttackGraph, diff_paths
+from .ledger import EvidenceLedger
+from .loop import LoopConfig, RedBlueLoop
 from .model import SEVERITY_ORDER, EdgeKind, NodeKind
+from .safety import KillSwitch, Policy, SafetyAgent
 from .store import GraphStore, normalize_time
 
 
@@ -24,6 +27,12 @@ def create_app(settings: Settings | None = None, store: GraphStore | None = None
     app = FastAPI(title="AEGIS", version=__version__)
     app.state.settings = settings
     app.state.store = store
+    policy = Policy.load(settings.policy_file)
+    kill_switch = KillSwitch(settings.kill_switch_file)
+    ledger = EvidenceLedger(settings.ledger_path)
+    app.state.policy = policy
+    app.state.kill_switch = kill_switch
+    app.state.ledger = ledger
 
     if auto_collect and not store.runs(limit=1):
         collect(store, settings)
@@ -98,6 +107,36 @@ def create_app(settings: Settings | None = None, store: GraphStore | None = None
     def findings(at: str | None = None) -> dict[str, Any]:
         g = graph_at(at)
         return {"findings": build_findings(g)}
+
+    @app.post("/api/engage")
+    def engage(at: str | None = None, top_paths: int = 5, max_actions: int = 8) -> dict[str, Any]:
+        """Run one safety-gated red-blue loop over the current graph (Phases 2-3)."""
+        safety = SafetyAgent(policy, kill_switch)
+        loop = RedBlueLoop(safety, ledger)
+        report = loop.run(graph_at(at), LoopConfig(top_paths=top_paths, max_actions=max_actions))
+        return report.as_dict()
+
+    @app.get("/api/policy")
+    def get_policy() -> dict[str, Any]:
+        return {"policy": policy.data, "kill_switch_engaged": kill_switch.engaged()}
+
+    @app.post("/api/kill-switch")
+    def set_kill_switch(engage: bool, reason: str = "manual via API") -> dict[str, Any]:
+        if engage:
+            kill_switch.trip(reason)
+        else:
+            kill_switch.reset()
+        return {"kill_switch_engaged": kill_switch.engaged()}
+
+    @app.get("/api/ledger")
+    def get_ledger(kind: str | None = None, limit: int = 200) -> dict[str, Any]:
+        ok, broken = ledger.verify()
+        return {"integrity_ok": ok, "broken_at": broken, "count": len(ledger), "entries": ledger.entries(kind, limit)}
+
+    @app.get("/api/ledger/verify")
+    def verify_ledger() -> dict[str, Any]:
+        ok, broken = ledger.verify()
+        return {"integrity_ok": ok, "broken_at": broken, "count": len(ledger)}
 
     if settings.frontend_dir.exists():
         app.mount("/static", StaticFiles(directory=settings.frontend_dir), name="static")

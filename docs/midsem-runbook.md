@@ -85,3 +85,34 @@ Without containers, run it from the repo root (see README for setup):
 
 See the README for the full endpoint list. Pick an earlier time in **Graph as of**
 on the dashboard to view the graph and paths as they were then.
+
+## Red-Blue Loop (Phases 2-3)
+
+Run one safety-gated engagement over the current graph:
+
+```bash
+.venv/bin/python -m aegis engage
+```
+
+Or from the dashboard, click **Run red-blue loop**. Each validated attack shows its detection status, the environment
+it ran in, its blast radius, and the proposed fixes with predicted impact, rollback, and a proof result (the attack
+re-run after the fix, plus regression checks).
+
+### Safety controls
+
+- Authorized scope lives in `policy.yaml` (default deny). Anything off the allow-list is blocked by the safety agent.
+- Kill switch: `POST /api/kill-switch?engage=true`, or create the file `var/KILL_SWITCH`. While engaged, every action
+  fails closed. Reset with `engage=false` or delete the file.
+- Evidence ledger: `var/ledger.jsonl`, hash-chained and append-only. Verify with `GET /api/ledger/verify`.
+
+### Applying a proven fix for real
+
+The proof engine shows a fix will close the path before you touch anything. To apply it to the live range:
+
+- **Segmentation**: remove the host from the network in `docker-compose.yml`, then `docker compose up -d`.
+- **Rotate secret**: change the value in the service environment / secrets manager and restart the service.
+- **WAF virtual patch**: put a ModSecurity reverse proxy in front of the web app.
+- **Identity hygiene**: clear the cached session / tighten the role in Keycloak.
+
+Then click **Re-collect**: the closed path disappears from the graph, and the `before`/`after` exposure drop is
+visible in the timeline.

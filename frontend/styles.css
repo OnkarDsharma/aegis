@@ -395,3 +395,17 @@ button:disabled {
   .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .topbar, .top-actions { flex-direction: column; align-items: stretch; }
 }
+
+.engage-summary { grid-template-columns: repeat(5, minmax(0, 1fr)); margin: 8px 0 14px; }
+
+.verdict { font-size: 0.78rem; font-weight: 800; padding: 3px 8px; border-radius: 6px; }
+.verdict.proven { background: #e3f3ea; color: var(--ok); }
+.verdict.failed-still-open { background: #fff3db; color: var(--warn); }
+.verdict.rejected-regression { background: #fde8e7; color: var(--danger); }
+
+.fix { border-top: 1px dashed var(--line); margin-top: 8px; padding-top: 8px; font-size: 0.9rem; }
+.fix-head { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 4px; }
+.fix-head strong { color: var(--ink); }
+.fix small { color: var(--muted); display: block; margin-top: 2px; }
+.detect-tag { font-size: 0.78rem; font-weight: 700; padding: 2px 7px; border-radius: 5px; background: var(--bg); border: 1px solid var(--line); }
+.detect-tag.missed { color: var(--danger); border-color: var(--danger); }

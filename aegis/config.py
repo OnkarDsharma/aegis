@@ -20,6 +20,9 @@ class Settings:
     scenarios_dir: Path = field(default_factory=lambda: _path("AEGIS_SCENARIOS_DIR", ROOT / "experiments" / "scenarios"))
     frontend_dir: Path = field(default_factory=lambda: _path("AEGIS_FRONTEND_DIR", ROOT / "frontend"))
     compose_file: Path = field(default_factory=lambda: _path("AEGIS_COMPOSE_FILE", ROOT / "cyber_range" / "docker-compose.yml"))
+    policy_file: Path = field(default_factory=lambda: _path("AEGIS_POLICY_FILE", ROOT / "policy.yaml"))
+    ledger_path: Path = field(default_factory=lambda: _path("AEGIS_LEDGER", ROOT / "var" / "ledger.jsonl"))
+    kill_switch_file: Path = field(default_factory=lambda: _path("AEGIS_KILL_SWITCH", ROOT / "var" / "KILL_SWITCH"))
     realm_file: Path = field(default_factory=lambda: _path("AEGIS_REALM_FILE", ROOT / "cyber_range" / "keycloak" / "aegis-realm.json"))
     # auto: live containers if any are running, else the compose file
     inventory_mode: str = field(default_factory=lambda: os.environ.get("AEGIS_INVENTORY", "auto"))

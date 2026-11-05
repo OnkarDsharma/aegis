@@ -19,6 +19,7 @@
             <select id="asOf"><option value="">Now</option></select>
           </label>
           <button type="button" id="collectBtn">Re-collect</button>
+          <button type="button" id="engageBtn">Run red-blue loop</button>
           <div class="status" id="status">Loading</div>
         </div>
       </header>
@@ -53,6 +54,21 @@
         </div>
         <ol class="paths" id="pathsList"></ol>
         <div class="empty" id="pathsEmpty" hidden>No attack paths reach an objective at this point in time.</div>
+      </section>
+
+      <section class="panel" id="engagePanel" aria-label="Red-blue engagement" hidden>
+        <div class="panel-head">
+          <h2>Red-blue engagement</h2>
+          <small id="ledgerState">Evidence ledger</small>
+        </div>
+        <div class="summary engage-summary">
+          <div><span id="engValidated">0</span><small>Validated</small></div>
+          <div><span id="engBlocked">0</span><small>Blocked by safety</small></div>
+          <div><span id="engDetected">0</span><small>Detected</small></div>
+          <div><span id="engProven">0</span><small>Fixes proven</small></div>
+          <div><span id="engExposure">0</span><small>Exposure if applied</small></div>
+        </div>
+        <ol class="paths" id="engageList"></ol>
       </section>
 
       <section class="toolbar" aria-label="Finding filters">

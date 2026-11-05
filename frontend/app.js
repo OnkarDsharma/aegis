@@ -202,3 +202,70 @@ document.querySelector("#collectBtn").addEventListener("click", async (event) =>
 });
 
 loadAll();
+
+async function runEngagement() {
+  const btn = document.querySelector("#engageBtn");
+  const panel = document.querySelector("#engagePanel");
+  btn.disabled = true;
+  const prev = btn.textContent;
+  btn.textContent = "Running…";
+  try {
+    const report = await getJson("/api/engage" + (state.at ? `?at=${encodeURIComponent(state.at)}` : ""), { method: "POST" });
+    panel.hidden = false;
+    document.querySelector("#engValidated").textContent = report.validated;
+    document.querySelector("#engBlocked").textContent = report.blocked_by_safety;
+    document.querySelector("#engDetected").textContent = report.detections.detected || 0;
+    document.querySelector("#engProven").textContent = report.fixes_proven;
+    document.querySelector("#engExposure").textContent =
+      `${report.exposure_before.toFixed(1)}→${report.exposure_after_if_applied.toFixed(1)}`;
+    const ledger = await getJson("/api/ledger/verify");
+    const led = document.querySelector("#ledgerState");
+    led.textContent = `Evidence ledger: ${ledger.count} records, integrity ${ledger.integrity_ok ? "verified ✓" : "BROKEN ✗"}`;
+    led.style.color = ledger.integrity_ok ? "#276749" : "#b42318";
+    renderEngagement(report.actions);
+    panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  } catch (error) {
+    document.querySelector("#status").textContent = "Engage error";
+  } finally {
+    btn.disabled = false;
+    btn.textContent = prev;
+  }
+}
+
+function renderEngagement(actions) {
+  const list = document.querySelector("#engageList");
+  list.replaceChildren();
+  for (const row of actions) {
+    const item = document.createElement("li");
+    item.className = "path";
+    const a = row.action;
+    const detect = row.detection || {};
+    const safety = row.safety || {};
+    const head = row.status === "blocked"
+      ? `<span class="badge theoretical">blocked by safety</span><span>${escapeHtml((safety.reasons || []).join("; "))}</span>`
+      : `<span class="badge ${row.result && row.result.succeeded ? "validated" : "theoretical"}">${escapeHtml(row.status)}</span>
+         <span class="detect-tag ${escapeHtml(detect.quality || "")}">detection: ${escapeHtml(detect.quality || "n/a")}${detect.latency_s ? ` (${detect.latency_s}s)` : ""}</span>
+         <span>env ${escapeHtml((row.route || {}).environment || "-")}</span>
+         <span>blast ${safety.blast_radius ?? "-"}</span>`;
+    const fixes = (row.fixes || []).map((entry) => {
+      const fix = entry.fix;
+      const proof = entry.proof;
+      return `
+        <div class="fix">
+          <div class="fix-head">
+            <span class="verdict ${escapeHtml(proof.verdict)}">${escapeHtml(proof.verdict)}</span>
+            <strong>${escapeHtml(fix.title)}</strong>
+            <span>tier ${escapeHtml(fix.approval_tier)}</span>
+          </div>
+          <small>Impact: ${escapeHtml(fix.predicted_impact)}</small>
+          <small>Rollback: ${escapeHtml(fix.rollback)}</small>
+          <small>Proof: attack re-run ${proof.closed ? "blocked" : "still open"}, regression ${proof.regression_ok ? "ok" : "FAILED: " + escapeHtml(proof.broken_workflows.join(", "))}, exposure ${proof.exposure_before}→${proof.exposure_after}</small>
+        </div>`;
+    }).join("");
+    item.innerHTML = `<div class="path-meta">${head}</div>
+      <div class="chain"><strong>${escapeHtml(a.name)}</strong></div>${fixes}`;
+    list.appendChild(item);
+  }
+}
+
+document.querySelector("#engageBtn").addEventListener("click", runEngagement);

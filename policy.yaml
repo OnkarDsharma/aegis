@@ -1,0 +1,33 @@
+# AEGIS policy-as-code (PRD FR-17). Default deny: an action runs only if its
+# technique, target and environment are all explicitly permitted here.
+version: 1
+
+authorized_assets: [webapp, database, employee, keycloak, internet]
+
+allowed_techniques:
+  - sqli-login-probe
+  - weak-credential-check
+  - reachability-probe
+  - T1082   # System Information Discovery
+  - T1046   # Network Service Discovery
+
+prohibited_techniques:
+  - T1486   # ransomware
+  - T1485   # data destruction
+  - T1490   # inhibit system recovery
+  - exploit-write
+  - lateral-persist
+
+require_non_destructive: true
+allowed_environments: [twin, canary, range]
+
+rate_limits:
+  per_run: 50
+  per_target: 10
+
+approval:
+  blast_radius_threshold: 0.6
+  environments_requiring_approval: [production]
+  auto_approve_environments: [twin]
+
+kill_switch_file: var/KILL_SWITCH
