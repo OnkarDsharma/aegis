@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>AEGIS Exposure</title>
-    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/styles.css?v=2" />
   </head>
   <body>
     <main class="shell">
@@ -13,20 +13,44 @@
           <p class="eyebrow">AEGIS range</p>
           <h1>Attack paths and findings</h1>
         </div>
-        <div class="top-actions">
+        <div class="header-right">
           <label>
             Graph as of
             <select id="asOf"><option value="">Now</option></select>
           </label>
-          <button type="button" id="collectBtn">Re-collect</button>
-          <button type="button" id="engageBtn">Run red-blue loop</button>
-          <button type="button" id="pilotBtn">Measure pilot metrics</button>
-          <button type="button" id="campaignBtn">Run adaptive campaign</button>
-          <button type="button" id="compileBtn">Compile controls</button>
-          <a class="attack-link" href="/attack">⚔ Live attack view</a>
           <div class="status" id="status">Loading</div>
         </div>
       </header>
+
+      <nav class="loop-strip" aria-label="How the AEGIS loop works">
+        <ol>
+          <li><b>1</b> Observe</li>
+          <li><b>2</b> Discover</li>
+          <li class="g-attack"><b>3</b> Attack</li>
+          <li class="g-attack"><b>4</b> Detect</li>
+          <li class="g-respond"><b>5</b> Respond</li>
+          <li class="g-respond"><b>6</b> Verify</li>
+          <li><b>7</b> Learn</li>
+        </ol>
+      </nav>
+
+      <section class="actionbar" aria-label="Actions">
+        <div class="agroup">
+          <span class="agroup-label">1 · Discover</span>
+          <button type="button" id="collectBtn">Re-collect estate</button>
+        </div>
+        <div class="agroup g-attack">
+          <span class="agroup-label">2 · Attack &amp; defend</span>
+          <a class="attack-link" href="/attack">⚔ Live attack view</a>
+          <button type="button" id="engageBtn">Run red-blue loop</button>
+        </div>
+        <div class="agroup g-respond">
+          <span class="agroup-label">3 · Measure &amp; prove</span>
+          <button type="button" id="pilotBtn">Pilot metrics</button>
+          <button type="button" id="campaignBtn">Adaptive campaign</button>
+          <button type="button" id="compileBtn">Compile controls</button>
+        </div>
+      </section>
 
       <section class="summary" aria-label="Findings summary">
         <div>
@@ -55,6 +79,11 @@
         <div class="panel-head">
           <h2>Attack paths</h2>
           <small>Ranked by security value = impact &times; reachability &times; confidence &minus; operational risk</small>
+        </div>
+        <div class="legend-badges">
+          <span><span class="badge validated">validated</span> proven exploit</span>
+          <span><span class="badge exploitable">exploitable</span> reachable, not yet tested</span>
+          <span><span class="badge theoretical">theoretical</span> not reachable from any entry</span>
         </div>
         <ol class="paths" id="pathsList"></ol>
         <div class="empty" id="pathsEmpty" hidden>No attack paths reach an objective at this point in time.</div>
@@ -153,6 +182,6 @@
         <div class="empty" id="emptyState" hidden>No findings match the current filters.</div>
       </section>
     </main>
-    <script src="/app.js"></script>
+    <script src="/app.js?v=2"></script>
   </body>
 </html>

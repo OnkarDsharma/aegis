@@ -40,19 +40,40 @@ function card(cx, cy, w, h, cls, html) {
   return { fo, div };
 }
 
+function zoneHeader(x, text, color) {
+  const t = el("text", { x, y: 34, "text-anchor": "middle", class: "zone-label", fill: color });
+  t.textContent = text;
+  return t;
+}
+
 function resetBoard() {
   board.replaceChildren();
   nodes.clear();
+
+  const defs = el("defs");
+  defs.innerHTML =
+    '<marker id="ahead" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">' +
+    '<path d="M0,0 L9,4.5 L0,9 Z" fill="#ff4d5e"></path></marker>';
   edgeLayer = el("g");
   cardLayer = el("g");
   fxLayer = el("g");
-  board.append(edgeLayer, cardLayer, fxLayer);
+  board.append(defs, edgeLayer, cardLayer, fxLayer);
+
+  board.append(
+    zoneHeader(ATTACKER.x, "ATTACKER", "#ff6b78"),
+    zoneHeader(TARGET_X, "TARGET SITES", "#9aa6c2"),
+    zoneHeader(DEFENDER.x, "DEFENDER (blue + ledger)", "#4da3ff"),
+  );
 
   const atk = card(ATTACKER.x, ATTACKER.y, CARD.dw, CARD.dh, "attacker",
     `<div class="title">🛰️ AEGIS red agent</div><div class="sub">bounded, non-destructive validation</div>`);
   const def = card(DEFENDER.x, DEFENDER.y, CARD.dw, CARD.dh, "defender",
     `<div class="title">🛡️ AEGIS blue + ledger</div><div class="sub">detect · prove fix · record</div>`);
   cardLayer.append(atk.fo, def.fo);
+}
+
+function setPhase(name) {
+  document.querySelectorAll(".phase").forEach((p) => p.classList.toggle("active", p.dataset.phase === name));
 }
 
 function layoutTargets(names) {
@@ -62,7 +83,7 @@ function layoutTargets(names) {
   names.forEach((name, i) => {
     const cy = n > 1 ? top + step * i : H / 2;
     const cx = TARGET_X;
-    const eA = el("line", { x1: ATTACKER.x + CARD.dw / 2, y1: ATTACKER.y, x2: cx - CARD.w / 2, y2: cy, class: "edge" });
+    const eA = el("line", { x1: ATTACKER.x + CARD.dw / 2, y1: ATTACKER.y, x2: cx - CARD.w / 2, y2: cy, class: "edge", "marker-end": "url(#ahead)" });
     const eD = el("line", { x1: DEFENDER.x - CARD.dw / 2, y1: DEFENDER.y, x2: cx + CARD.w / 2, y2: cy, class: "edge detect", "stroke-opacity": "0" });
     edgeLayer.append(eA, eD);
     const url = TARGET_URL[name];
@@ -118,6 +139,7 @@ async function playAction(row) {
   const pos = { x: node.cx, y: node.cy };
 
   bump("paths");
+  setPhase("attack");
   node.card.classList.add("firing");
   node.edgeAttack.classList.add("hot");
   await shot(ATTACKER, pos, "");
@@ -162,6 +184,7 @@ async function playAction(row) {
   // Detection: ping back to the defender/SOC.
   const det = row.detection || {};
   if (det.detected || det.quality === "detected" || det.quality === "detected-late") {
+    setPhase("detect");
     node.edgeDefend.setAttribute("stroke-opacity", "1");
     await shot(pos, DEFENDER, "detect");
     bump("detected");
@@ -173,6 +196,7 @@ async function playAction(row) {
   // Remediation: proven fixes travel defender -> target and close it.
   for (const entry of row.fixes || []) {
     if (!entry.proof || entry.proof.verdict !== "proven") continue;
+    setPhase("respond");
     await shot(DEFENDER, pos, "fix");
     node.card.classList.remove("breached");
     node.card.classList.add("closed");
@@ -224,6 +248,7 @@ async function launch() {
       await sleep(dur(200));
     }
 
+    setPhase("verify");
     showExposure(report);
     const modes = report.execution_modes || {};
     logFeed("info", "Engagement complete",

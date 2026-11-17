@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>AEGIS — Live Attack Flow</title>
-    <link rel="stylesheet" href="/attack.css" />
+    <link rel="stylesheet" href="/attack.css?v=2" />
   </head>
   <body>
     <main class="stage">
@@ -33,6 +33,16 @@
           <a class="link" href="/">Dashboard →</a>
         </div>
       </header>
+
+      <nav class="phases" aria-label="Loop phases">
+        <span class="phase" data-phase="attack"><b>1</b> Attack <small>red → site</small></span>
+        <span class="sep">→</span>
+        <span class="phase" data-phase="detect"><b>2</b> Detect <small>site → blue</small></span>
+        <span class="sep">→</span>
+        <span class="phase" data-phase="respond"><b>3</b> Respond <small>blue → site</small></span>
+        <span class="sep">→</span>
+        <span class="phase" data-phase="verify"><b>4</b> Verify &amp; record</span>
+      </nav>
 
       <section class="counters" aria-label="Engagement summary">
         <div class="counter"><span id="cPaths">0</span><label>Paths hit</label></div>
@@ -64,6 +74,6 @@
         <span class="hint">Tip: click a breached site to open it.</span>
       </footer>
     </main>
-    <script src="/attack.js"></script>
+    <script src="/attack.js?v=2"></script>
   </body>
 </html>

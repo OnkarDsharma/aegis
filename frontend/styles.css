@@ -433,3 +433,45 @@ button:disabled {
   border-radius: 8px; padding: 8px 12px; font-size: .9rem; font-weight: 600;
 }
 .attack-link:hover { background: #c92f3f; }
+
+/* --- Flow clarity: header, loop strip, grouped actions, legend --- */
+.header-right { display: flex; align-items: end; gap: 12px; }
+
+.loop-strip { margin-bottom: 14px; }
+.loop-strip ol {
+  list-style: none; margin: 0; padding: 10px 12px; display: flex; flex-wrap: wrap; gap: 6px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 10px; align-items: center;
+}
+.loop-strip li {
+  display: flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px;
+  background: var(--bg); color: var(--muted); font-weight: 750; font-size: 0.86rem; white-space: nowrap;
+}
+.loop-strip li b {
+  display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%;
+  background: #e8eef5; color: #435160; font-size: 0.72rem;
+}
+.loop-strip li:not(:last-child)::after { content: "→"; margin-left: 2px; color: var(--line); font-weight: 800; }
+.loop-strip li.g-attack { background: #fde8e7; color: var(--danger); }
+.loop-strip li.g-attack b { background: var(--danger); color: #fff; }
+.loop-strip li.g-respond { background: #e3f3ea; color: var(--ok); }
+.loop-strip li.g-respond b { background: var(--ok); color: #fff; }
+
+.actionbar { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 18px; }
+.agroup {
+  display: flex; flex-direction: column; gap: 8px; padding: 10px 12px;
+  border: 1px solid var(--line); border-radius: 10px; background: var(--panel);
+}
+.agroup-label { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.agroup > :not(.agroup-label) { display: inline-flex; }
+.agroup .attack-link, .agroup button { width: 100%; justify-content: center; }
+.agroup.g-attack { border-color: #f3c7c3; background: #fff7f6; }
+.agroup.g-attack .agroup-label { color: var(--danger); }
+.agroup.g-respond { border-color: #c6e6d3; background: #f6fbf8; }
+.agroup.g-respond .agroup-label { color: var(--ok); }
+/* keep the two attack actions side by side */
+.agroup.g-attack { flex-flow: row wrap; align-items: stretch; }
+.agroup.g-attack .agroup-label { flex-basis: 100%; }
+.agroup.g-attack .attack-link, .agroup.g-attack button { width: auto; flex: 1; }
+
+.legend-badges { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 12px; color: var(--muted); font-size: 0.82rem; }
+.legend-badges > span { display: inline-flex; align-items: center; gap: 6px; }

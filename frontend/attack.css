@@ -105,3 +105,24 @@ button#launch:disabled { opacity: .5; cursor: not-allowed; }
   .counters { grid-template-columns: repeat(3, 1fr); }
   .board-wrap { grid-template-columns: 1fr; }
 }
+
+/* --- Phase tracker + zone labels (flow clarity) --- */
+.phases { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 16px 0 4px; }
+.phases .phase {
+  display: inline-flex; align-items: center; gap: 7px; padding: 7px 12px; border-radius: 999px;
+  background: var(--panel); border: 1px solid var(--line); color: var(--muted); font-size: .88rem; font-weight: 600;
+  transition: all .25s;
+}
+.phases .phase b { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: #1d2947; font-size: .72rem; color: var(--ink); }
+.phases .phase small { color: #6b789e; font-weight: 500; }
+.phases .sep { color: var(--line); font-weight: 800; }
+.phases .phase[data-phase="attack"].active { border-color: var(--red); color: var(--red); box-shadow: 0 0 0 3px rgba(255,77,94,.15); }
+.phases .phase[data-phase="attack"].active b { background: var(--red); color: #fff; }
+.phases .phase[data-phase="detect"].active { border-color: var(--blue); color: var(--blue); box-shadow: 0 0 0 3px rgba(77,163,255,.15); }
+.phases .phase[data-phase="detect"].active b { background: var(--blue); color: #fff; }
+.phases .phase[data-phase="respond"].active,
+.phases .phase[data-phase="verify"].active { border-color: var(--green); color: var(--green); box-shadow: 0 0 0 3px rgba(47,210,122,.15); }
+.phases .phase[data-phase="respond"].active b,
+.phases .phase[data-phase="verify"].active b { background: var(--green); color: #06281a; }
+
+.zone-label { font-size: 13px; font-weight: 800; letter-spacing: .12em; }
