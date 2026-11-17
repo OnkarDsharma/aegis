@@ -26,6 +26,7 @@ aegis/                 Python package
   safety.py            policy-as-code, independent safety agent, kill switch (FR-17/18/19)
   environments.py      twin/canary/range routing, fidelity, availability (FR-23/24/22)
   redteam.py           bounded non-destructive validation actions (FR-9/10/11)
+  probes.py            live non-destructive probes: SQLi login, MySQL/Keycloak credential, TCP reach (FR-10/29)
   cleanup.py           cleanup + residual-artifact scan (FR-20)
   detection.py         Sigma-style detection over telemetry (FR-13)
   blueteam.py          fix proposals + remediation proof engine (FR-14/25/26/27)
@@ -123,6 +124,33 @@ Applying a proven fix to the live range stays a human step (edit compose/realm, 
 will work first. On the current range the loop validates 3 paths, proves 4 fixes, and cuts the exposure score by
 roughly two thirds.
 
+### Live probes
+
+By default the red agent *simulates* each validation from graph reachability. Turn on live probes and the actions are
+executed against the real range instead, so "validated" means the attack actually worked:
+
+```bash
+.venv/bin/python -m aegis engage --live
+```
+
+(or `AEGIS_LIVE_PROBES=1`, or `POST /api/engage?live=true`). The probes in `aegis/probes.py` are non-destructive:
+
+- `sqli-login-probe`: posts the SC-001 payload to Juice Shop's `/rest/user/login`; proven only if a session token comes
+  back. The token is discarded and only its hash is kept.
+- `weak-credential-check`: tries the credential the deployment config exposes, plus at most two common defaults,
+  against MySQL (native-password handshake, then `COM_QUIT`, no query) or Keycloak (OIDC password grant, then logout).
+  The secret never reaches the ledger; the evidence records the source (`deployment-config` / `common-default`).
+- `reachability-probe`: opens and closes a TCP connection.
+
+Endpoints come from the compose file's published ports on `127.0.0.1` (webapp → 8080, keycloak → 8180). Override or
+add others with `AEGIS_LIVE_TARGETS=database=172.18.0.3:3306,webapp=10.0.0.5:3000`. Live I/O happens only in
+`AEGIS_LIVE_ENVIRONMENTS` (default `range,canary`). Proof re-runs and campaign rounds run in the twin, which is a graph
+model, so they always stay simulated. The kill switch is checked again before any network call. A probe that can't
+run (no endpoint, unsupported technique such as the cloud/k8s/OT probes) falls back to simulation and says so in its
+evidence (`mode: simulated`, `live_skipped`). A target that refuses the connection is reported as `unreachable`, never
+validated. With `AEGIS_LIVE_VANTAGE=exec`, reachability is also checked from the path's container foothold via
+`docker exec`. `GET /api/probes` shows the resolved endpoints.
+
 ## Pilot metrics (Phase 4)
 
 `POST /api/pilot` (or `python -m aegis pilot`) measures the PRD Success Metrics from the recorded evidence and scores
@@ -195,7 +223,8 @@ Kubernetes, kubernetes-rbac, aws-s3, aws-security-group, cloud-compute, ot-firew
 | GET | `/api/timeline` | instants at which the graph changed |
 | GET | `/api/runs`, `/api/runs/{id}/evidence` | collector runs and their source hashes |
 | GET | `/api/nodes/{id}/history` | every version of a node |
-| POST | `/api/engage` | run one safety-gated red-blue loop; returns the engagement report |
+| POST | `/api/engage?live=` | run one safety-gated red-blue loop (optionally with live probes); returns the engagement report |
+| GET | `/api/probes` | live-probe configuration and resolved endpoints |
 | POST | `/api/pilot?repeat=` | measure pilot Success Metrics + executive report, scored against targets (Phase 4) |
 | POST | `/api/campaign?rounds=&paths_per_round=` | run the adaptive multi-round red-blue campaign (Phase 5) |
 | POST | `/api/compile?top_paths=` | compile proven fixes into cross-tool controls + change tickets / CMDB (Phase 7) |
@@ -208,6 +237,7 @@ Kubernetes, kubernetes-rbac, aws-s3, aws-security-group, cloud-compute, ot-firew
 All settings are `AEGIS_*` environment variables (see `aegis/config.py`): `AEGIS_DB`, `AEGIS_RESULTS_DIR`,
 `AEGIS_SCENARIOS_DIR`, `AEGIS_COMPOSE_FILE`, `AEGIS_REALM_FILE`, `AEGIS_INVENTORY` (`auto|compose|runtime`),
 `AEGIS_KEYCLOAK_URL`/`_REALM`/`_ADMIN`/`_PASSWORD`, `AEGIS_POLICY_FILE`, `AEGIS_LEDGER`, `AEGIS_KILL_SWITCH`,
-`AEGIS_HOST`, `AEGIS_PORT`.
+`AEGIS_HOST`, `AEGIS_PORT`, and for live probes `AEGIS_LIVE_PROBES`, `AEGIS_LIVE_TARGETS`,
+`AEGIS_LIVE_ENVIRONMENTS`, `AEGIS_LIVE_VANTAGE`, `AEGIS_PROBE_TIMEOUT`.
 
 All passwords in `cyber_range/` are lab-only test values for the isolated range.

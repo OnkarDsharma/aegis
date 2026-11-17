@@ -34,5 +34,12 @@ class Settings:
     keycloak_realm: str = field(default_factory=lambda: os.environ.get("AEGIS_KEYCLOAK_REALM", "aegis"))
     keycloak_admin: str = field(default_factory=lambda: os.environ.get("AEGIS_KEYCLOAK_ADMIN", ""))
     keycloak_password: str = field(default_factory=lambda: os.environ.get("AEGIS_KEYCLOAK_PASSWORD", ""))
+    # Live red-team probes (aegis/probes.py). Off by default: the loop simulates.
+    live_probes: bool = field(default_factory=lambda: os.environ.get("AEGIS_LIVE_PROBES", "").lower() in {"1", "true", "yes", "on"})
+    # asset=host:port or asset:containerport=host:port, comma separated; compose published ports are used otherwise
+    live_targets: str = field(default_factory=lambda: os.environ.get("AEGIS_LIVE_TARGETS", ""))
+    live_environments: str = field(default_factory=lambda: os.environ.get("AEGIS_LIVE_ENVIRONMENTS", "range,canary"))
+    live_vantage: str = field(default_factory=lambda: os.environ.get("AEGIS_LIVE_VANTAGE", "host"))  # host | exec
+    probe_timeout: float = field(default_factory=lambda: float(os.environ.get("AEGIS_PROBE_TIMEOUT", "5")))
     host: str = field(default_factory=lambda: os.environ.get("AEGIS_HOST", "127.0.0.1"))
     port: int = field(default_factory=lambda: int(os.environ.get("AEGIS_PORT", "8000")))

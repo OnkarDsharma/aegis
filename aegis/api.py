@@ -111,10 +111,19 @@ def create_app(settings: Settings | None = None, store: GraphStore | None = None
         return {"findings": build_findings(g)}
 
     @app.post("/api/engage")
-    def engage(at: str | None = None, top_paths: int = 5, max_actions: int = 8) -> dict[str, Any]:
-        """Run one safety-gated red-blue loop over the current graph (Phases 2-3)."""
+    def engage(at: str | None = None, top_paths: int = 5, max_actions: int = 8,
+               live: bool | None = None) -> dict[str, Any]:
+        """Run one safety-gated red-blue loop over the current graph (Phases 2-3).
+
+        ``live`` (default: ``AEGIS_LIVE_PROBES``) executes the red agent's actions
+        against the real range with the non-destructive probes in aegis/probes.py."""
         safety = SafetyAgent(policy, kill_switch)
-        loop = RedBlueLoop(safety, ledger)
+        red = None
+        if settings.live_probes if live is None else live:
+            from .probes import live_red_agent
+
+            red = live_red_agent(settings, kill_switch)
+        loop = RedBlueLoop(safety, ledger, red=red)
         report = loop.run(graph_at(at), LoopConfig(top_paths=top_paths, max_actions=max_actions))
         return report.as_dict()
 
@@ -168,6 +177,21 @@ def create_app(settings: Settings | None = None, store: GraphStore | None = None
                             "ticket_markdown": ticket.as_markdown(), "cmdb": cmdb.as_dict()})
         return {"count": len(out), "tools": sorted({t for o in out for t in o["remediation"]["tools"]}),
                 "remediations": out}
+
+    @app.get("/api/probes")
+    def probes() -> dict[str, Any]:
+        """Live-probe configuration (no secrets)."""
+        from .probes import EndpointResolver
+
+        resolver = EndpointResolver(settings.live_targets, settings.compose_file)
+        return {
+            "enabled_by_default": settings.live_probes,
+            "environments": [e.strip() for e in settings.live_environments.split(",") if e.strip()],
+            "vantage": settings.live_vantage,
+            "timeout_s": settings.probe_timeout,
+            "endpoints": {f"{a}:{p}": f"{resolver.publish_host}:{h}" for (a, p), h in resolver.published.items()}
+            | {k: str(v) for k, v in resolver.overrides.items()},
+        }
 
     @app.get("/api/policy")
     def get_policy() -> dict[str, Any]:

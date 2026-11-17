@@ -422,3 +422,7 @@ button:disabled {
   margin: 0;
   overflow-x: auto;
 }
+
+.mode-tag { font-size: 0.75rem; padding: 1px 6px; border-radius: 4px; border: 1px solid currentColor; }
+.mode-tag.live { color: #b42318; font-weight: 600; }
+.mode-tag.simulated { color: #667085; }

@@ -49,6 +49,7 @@ class EngagementReport:
     exposure_after_if_applied: float
     actions: list[dict[str, Any]] = field(default_factory=list)
     ledger_ok: bool = True
+    execution_modes: dict[str, int] = field(default_factory=dict)  # live vs simulated validations
 
     def as_dict(self) -> dict[str, Any]:
         return self.__dict__.copy()
@@ -85,6 +86,7 @@ class RedBlueLoop:
         detections = {"detected": 0, "missed": 0, "detected-late": 0}
         exposure_after = exposure_before
         rows: list[dict[str, Any]] = []
+        modes: dict[str, int] = {}
 
         for action in self.red.plan(graph, top_paths=config.top_paths, max_actions=config.max_actions):
             route = self.router.route(action.operational_risk)
@@ -105,6 +107,8 @@ class RedBlueLoop:
             if not clean.clean:
                 self.safety.kill_switch.trip(f"residual artifacts after {action.action_id}")
 
+            mode = str(result.evidence.get("mode", "simulated"))
+            modes[mode] = modes.get(mode, 0) + 1
             detect = self.detection.evaluate(result)
             detections[detect.quality] = detections.get(detect.quality, 0) + 1
 
@@ -152,7 +156,7 @@ class RedBlueLoop:
             attack_paths=len(before_paths), validated=validated, blocked_by_safety=blocked,
             detections=detections, fixes_proposed=proposed, fixes_proven=proven,
             exposure_before=exposure_before, exposure_after_if_applied=round(exposure_after, 3),
-            actions=rows, ledger_ok=ledger_ok,
+            actions=rows, ledger_ok=ledger_ok, execution_modes=modes,
         )
         self.ledger.record("engagement", {"summary": {k: v for k, v in report.as_dict().items() if k != "actions"}})
         return report

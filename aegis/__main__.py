@@ -22,6 +22,8 @@ def main(argv: list[str] | None = None) -> None:
     engage = sub.add_parser("engage", help="run one safety-gated red-blue loop and print the report")
     engage.add_argument("--at", help="ISO timestamp; default now")
     engage.add_argument("--top-paths", type=int, default=5)
+    engage.add_argument("--live", action=argparse.BooleanOptionalAction, default=None,
+                        help="run live probes against the range (default: AEGIS_LIVE_PROBES)")
     pilot = sub.add_parser("pilot", help="measure pilot Success Metrics and print an executive report")
     pilot.add_argument("--at", help="ISO timestamp; default now")
     pilot.add_argument("--top-paths", type=int, default=5)
@@ -58,16 +60,30 @@ def main(argv: list[str] | None = None) -> None:
 
         store = GraphStore(settings.db_path)
         g = AttackGraph(*store.snapshot(args.at))
-        safety = SafetyAgent(Policy.load(settings.policy_file), KillSwitch(settings.kill_switch_file))
-        loop = RedBlueLoop(safety, EvidenceLedger(settings.ledger_path))
+        kill_switch = KillSwitch(settings.kill_switch_file)
+        safety = SafetyAgent(Policy.load(settings.policy_file), kill_switch)
+        live = settings.live_probes if args.live is None else args.live
+        red = None
+        if live:
+            from .probes import live_red_agent
+
+            red = live_red_agent(settings, kill_switch)
+        loop = RedBlueLoop(safety, EvidenceLedger(settings.ledger_path), red=red)
         report = loop.run(g, LoopConfig(top_paths=args.top_paths))
         summary = {k: v for k, v in report.as_dict().items() if k != "actions"}
         print(json.dumps(summary, indent=2))
         for row in report.actions:
-            if row["status"] == "access-proven":
-                fixes = ", ".join(f"{f['fix']['fix_type']}:{f['proof']['verdict']}" for f in row["fixes"])
-                print(f"  {row['action']['target']:9} {row['action']['technique']:22} "
-                      f"detect={row['detection']['quality']:13} fixes=[{fixes}]")
+            if "result" not in row:
+                print(f"  {row['action']['target']:9} {row['action']['technique']:22} BLOCKED by safety")
+                continue
+            ev = row["result"]["evidence"]
+            mode = ev.get("mode", "simulated")
+            fixes = ", ".join(f"{f['fix']['fix_type']}:{f['proof']['verdict']}" for f in row["fixes"])
+            line = (f"  {row['action']['target']:9} {row['action']['technique']:22} [{mode:9}] {row['status']:13} "
+                    f"detect={row['detection']['quality']:13} fixes=[{fixes}]")
+            if ev.get("live_skipped"):
+                line += f"  (live skipped: {ev['live_skipped']})"
+            print(line)
     elif args.cmd == "pilot":
         from .metrics import MetricsEngine, PilotReport
         from .safety import KillSwitch, Policy

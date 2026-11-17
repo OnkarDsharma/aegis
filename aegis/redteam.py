@@ -12,9 +12,11 @@ model's guess (this is what makes a finding "validated" rather than
 "theoretical"). Each run emits telemetry the blue-team detection engine consumes,
 and declares the cleanup needed so the cleanup scanner can confirm no residue.
 
-Executors default to a deterministic simulation so the whole loop runs offline;
-live adapters (an HTTP SQLi probe, a TCP reachability check) are used only when
-an environment is actually available and policy allows.
+Executors default to a deterministic simulation so the whole loop runs offline.
+With ``AEGIS_LIVE_PROBES=1`` the live adapters in :mod:`aegis.probes` (an HTTP
+SQLi login probe, MySQL / Keycloak credential checks, a TCP reachability check)
+execute the action against the real target instead; evidence records which
+mode ran (``mode: live`` or ``mode: simulated``).
 """
 
 from __future__ import annotations
@@ -74,6 +76,7 @@ class ValidationAction:
     operational_risk: float = 0.2
     cleanup: list[str] = field(default_factory=list)
     signature: str = ""
+    entry: str = ""          # attack-graph entry state of the path (e.g. pos:asset:employee)
 
     def as_dict(self) -> dict[str, Any]:
         return self.__dict__.copy()
@@ -171,6 +174,7 @@ class RedAgent:
             operational_risk=path.operational_risk,
             cleanup=["close probe session", "discard retrieved marker", "remove temporary auth token"],
             signature=signature,
+            entry=path.entry,
         )
 
     # -------------------------------------------------------------- execution
@@ -201,6 +205,7 @@ class RedAgent:
             "vuln_id": action.vuln_id,
             "path_id": action.path_id,
             "environment": environment,
+            "mode": "simulated",
             "reachable_in_graph": reachable,
             "confidence": confidence,
             "telemetry_signature": action.signature,

@@ -241,9 +241,12 @@ function renderEngagement(actions) {
     const a = row.action;
     const detect = row.detection || {};
     const safety = row.safety || {};
+    const ev = (row.result || {}).evidence || {};
+    const mode = ev.mode || "simulated";
+    const modeTag = `<span class="mode-tag ${escapeHtml(mode)}" title="${escapeHtml(ev.live_skipped ? "live skipped: " + ev.live_skipped : (ev.endpoint ? "probed " + ev.endpoint : ""))}">${escapeHtml(mode)}</span>`;
     const head = row.status === "blocked"
       ? `<span class="badge theoretical">blocked by safety</span><span>${escapeHtml((safety.reasons || []).join("; "))}</span>`
-      : `<span class="badge ${row.result && row.result.succeeded ? "validated" : "theoretical"}">${escapeHtml(row.status)}</span>
+      : `<span class="badge ${row.result && row.result.succeeded ? "validated" : "theoretical"}">${escapeHtml(row.status)}</span>${modeTag}
          <span class="detect-tag ${escapeHtml(detect.quality || "")}">detection: ${escapeHtml(detect.quality || "n/a")}${detect.latency_s ? ` (${detect.latency_s}s)` : ""}</span>
          <span>env ${escapeHtml((row.route || {}).environment || "-")}</span>
          <span>blast ${safety.blast_radius ?? "-"}</span>`;

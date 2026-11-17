@@ -179,6 +179,7 @@ def build_observation(services: list[ServiceRecord], collector: str, evidence: d
                         "name": f"Weak credential in deployment config ({finding['variable']})",
                         "classification": "CWE-521 / CWE-798",
                         "cwe": "CWE-521",
+                        "secret_variable": finding["variable"],
                         "severity": "high",
                         "confidence": 0.6,
                         "remote": port is not None,
