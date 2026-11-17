@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AEGIS — Live Attack Flow</title>
+    <link rel="stylesheet" href="/attack.css" />
+  </head>
+  <body>
+    <main class="stage">
+      <header class="bar">
+        <div class="brand">
+          <span class="dot"></span>
+          <div>
+            <p class="eyebrow">AEGIS red–blue loop</p>
+            <h1>Live attack flow</h1>
+          </div>
+        </div>
+        <div class="controls">
+          <label class="toggle" title="Run real non-destructive probes against the running range">
+            <input type="checkbox" id="liveToggle" />
+            <span>Live probes</span>
+          </label>
+          <label class="speed">
+            Speed
+            <select id="speed">
+              <option value="1.4">Calm</option>
+              <option value="1" selected>Normal</option>
+              <option value="0.6">Fast</option>
+            </select>
+          </label>
+          <button id="launch" type="button">▶ Launch attack</button>
+          <a class="link" href="/">Dashboard →</a>
+        </div>
+      </header>
+
+      <section class="counters" aria-label="Engagement summary">
+        <div class="counter"><span id="cPaths">0</span><label>Paths hit</label></div>
+        <div class="counter breach"><span id="cBreached">0</span><label>Breached</label></div>
+        <div class="counter detect"><span id="cDetected">0</span><label>Detected</label></div>
+        <div class="counter blocked"><span id="cBlocked">0</span><label>Blocked by safety</label></div>
+        <div class="counter closed"><span id="cClosed">0</span><label>Fixes proven</label></div>
+        <div class="counter exposure">
+          <span id="cExposure">—</span><label>Exposure before→after</label>
+          <div class="expo-bar"><i id="expoFill"></i></div>
+        </div>
+      </section>
+
+      <section class="board-wrap">
+        <svg id="board" viewBox="0 0 1200 680" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Attack flow board"></svg>
+        <aside class="feed" aria-label="Event feed">
+          <h2>Event feed</h2>
+          <ol id="feed"></ol>
+        </aside>
+      </section>
+
+      <footer class="legend">
+        <span><i class="sw attacker"></i> AEGIS red agent</span>
+        <span><i class="sw target"></i> Target site</span>
+        <span><i class="sw breach"></i> Breached</span>
+        <span><i class="sw repel"></i> Repelled</span>
+        <span><i class="sw block"></i> Blocked by safety</span>
+        <span><i class="sw close"></i> Closed by blue</span>
+        <span class="hint">Tip: click a breached site to open it.</span>
+      </footer>
+    </main>
+    <script src="/attack.js"></script>
+  </body>
+</html>

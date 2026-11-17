@@ -218,6 +218,10 @@ def create_app(settings: Settings | None = None, store: GraphStore | None = None
     if settings.frontend_dir.exists():
         app.mount("/static", StaticFiles(directory=settings.frontend_dir), name="static")
 
+        @app.get("/attack", include_in_schema=False)
+        def attack_view():
+            return FileResponse(settings.frontend_dir / "attack.html")
+
         @app.get("/{path:path}", include_in_schema=False)
         def frontend(path: str):
             candidate = (settings.frontend_dir / path).resolve()
